@@ -18,6 +18,12 @@ Point the camera at an object, press **Track object** (or tap the object on scre
 - **Clear line**, **Flip camera**, and **Save image** (PNG with the line drawn on it) buttons.
 - Works best on objects with visible texture or edges. Plain, single-color objects are harder to lock on to.
 
+## Blink Counter (`blink.html`)
+Uses the front camera to count how many times you blink, and shows blinks per minute, time since your last blink, and a live graph of how open your eyes are.
+- Face landmarks come from [MediaPipe Face Landmarker](https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker), which runs on-device in the browser. The library loads from jsDelivr and the ~4 MB model from Google's storage the first time you press Start. There's no backend, and video never leaves the device.
+- A blink is counted when the eye aspect ratio drops below a set fraction of your normal open-eye level (which it learns automatically) and comes back within 40–800 ms. Longer closures aren't counted.
+- Use the **Sensitivity** slider if it misses blinks (raise it) or counts extra ones (lower it).
+
 ## Hosting
 It's a single static `index.html`. Enable GitHub Pages under **Settings → Pages → Deploy from a branch → `main` / root**.
 Camera access needs HTTPS, which GitHub Pages provides.
