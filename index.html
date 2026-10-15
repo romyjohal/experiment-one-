@@ -424,6 +424,8 @@
   <hr>
   <button data-act="copy">Copy frame</button>
   <button data-act="snap">Save frame as .txt</button>
+  <hr>
+  <button data-act="tracker">Open Tracker Cam...</button>
 </div>
 <div class="menu raised" id="menu-view">
   <button data-act="fullscreen">Full screen</button>
@@ -437,6 +439,7 @@
   <button data-act="start">Start camera</button>
   <button data-act="flip">Switch camera</button>
   <button data-act="snap">Save frame</button>
+  <button data-act="tracker">Tracker Cam</button>
   <hr>
   <button data-act="about">About...</button>
   <button data-act="stop">Shut Down...</button>
@@ -678,6 +681,7 @@
     start, stop, flip, freeze: toggleFreeze, snap: saveFrame, copy: copyFrame, fullscreen, about,
     'toggle-invert': () => { invertChk.checked = !invertChk.checked; },
     'toggle-mirror': () => { mirrorChk.checked = !mirrorChk.checked; },
+    tracker: () => { location.href = 'tracker.html'; },
   };
 
   // ---------- UI wiring ----------

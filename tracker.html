@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#008080">
+<title>Tracker Cam 95</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect x=%272%27 y=%272%27 width=%2712%27 height=%2712%27 fill=%27none%27 stroke=%27%23f00%27 stroke-width=%272%27/%3E%3Ccircle cx=%278%27 cy=%278%27 r=%272%27 fill=%27%23f00%27/%3E%3C/svg%3E">
+<style>
+  :root {
+    --desktop: #008080;
+    --face: #c0c0c0;
+    --light: #ffffff;
+    --mid: #dfdfdf;
+    --shadow: #808080;
+    --dark: #0a0a0a;
+    --title-a: #000080;
+    --title-b: #1084d0;
+    --text: #000000;
+    --font: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+    --mono: "Lucida Console", "Courier New", Courier, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--desktop); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    -webkit-user-select: none; user-select: none;
+  }
+  body {
+    display: flex; flex-direction: column;
+    height: 100vh; height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+  .raised {
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .sunken {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .desktop {
+    flex: 1; min-height: 0; padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+  }
+  .window {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    padding: 3px; width: 100%; max-width: 760px; margin: 0 auto;
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 3px;
+    background: linear-gradient(90deg, var(--title-a), var(--title-b));
+    color: #fff; font-weight: bold;
+  }
+  .titlebar .t-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .titlebar a { color: #fff; font-weight: normal; font-size: 12px; }
+
+  .screen {
+    flex: 1; min-height: 0; margin: 4px 0;
+    padding: 2px; background: #000; position: relative;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #view { max-width: 100%; max-height: 100%; display: block; touch-action: none; }
+  video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .splash {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; padding: 16px;
+    color: #c0c0c0; font-family: var(--mono); text-align: center;
+  }
+  .splash.hidden { display: none; }
+
+  .controls { display: flex; flex-direction: column; gap: 6px; padding: 2px 1px 4px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row .btn { flex: 1; }
+  .btn {
+    font: inherit; color: var(--text); border: 0; cursor: pointer;
+    min-height: 36px; padding: 4px 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .btn:active {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--dark),
+                inset -2px -2px var(--mid), inset 2px 2px var(--shadow);
+    padding: 5px 9px 3px 11px;
+  }
+  .btn.default { outline: 1px solid var(--dark); outline-offset: -1px; font-weight: bold; }
+  .btn:disabled { color: var(--shadow); text-shadow: 1px 1px var(--light); }
+  label.lbl { white-space: nowrap; min-width: 64px; }
+  .val { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; background: transparent;
+    flex: 1; height: 28px; margin: 0; min-width: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-moz-range-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 24px; margin-top: -10px; border: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 24px; border: 0; border-radius: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .statusbar { display: flex; gap: 2px; font-size: 12px; }
+  .statusbar > div { padding: 3px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .statusbar > div:first-child { flex: 1; }
+</style>
+</head>
+<body>
+<div class="desktop">
+  <div class="window raised">
+    <div class="titlebar">
+      <span class="t-text">Tracker Cam 95</span>
+      <a href="./">ASCII Cam &raquo;</a>
+    </div>
+
+    <div class="screen sunken">
+      <canvas id="view" aria-label="Camera view with tracking overlay"></canvas>
+      <video id="video" playsinline muted></video>
+      <div class="splash" id="splash">
+        <div style="color:#fff;font-size:16px">TRACKER CAM 95</div>
+        <div>1. Press <b>Start camera</b>.<br>2. Put the object inside the box.<br>3. Press <b>Track object</b>.</div>
+        <div style="font-size:11px;color:#808080">Runs entirely in your browser. Video never leaves your device.</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="row">
+        <button class="btn default" id="startBtn">Start camera</button>
+        <button class="btn" id="trackBtn" disabled>Track object</button>
+      </div>
+      <div class="row">
+        <button class="btn" id="clearBtn" disabled>Clear line</button>
+        <button class="btn" id="flipBtn" disabled>Flip camera</button>
+        <button class="btn" id="saveBtn" disabled>Save image</button>
+      </div>
+      <div class="row">
+        <label class="lbl" for="boxSize">Box size</label>
+        <input type="range" id="boxSize" min="10" max="50" value="22">
+        <span class="val" id="boxVal">22%</span>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <div class="sunken" id="status">Ready</div>
+      <div class="sunken" id="score">--</div>
+      <div class="sunken" id="fps">-- fps</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = id => document.getElementById(id);
+  const video = $('video'), view = $('view'), ctx = view.getContext('2d');
+  const startBtn = $('startBtn'), trackBtn = $('trackBtn'), clearBtn = $('clearBtn'),
+        flipBtn = $('flipBtn'), saveBtn = $('saveBtn'), boxSize = $('boxSize');
+
+  // Tracking runs on a small grayscale copy of the frame (PROC_W pixels wide).
+  const PROC_W = 320;
+  const T = 32;            // template side in pixels (patches are resampled to T x T)
+  const TRAIL_MAX = 4000;  // max points kept in the red line
+
+  const proc = document.createElement('canvas');
+  const pctx = proc.getContext('2d', { willReadFrequently: true });
+  let gray = null, PW = 0, PH = 0;
+
+  let stream = null, facing = 'environment', running = false;
+  let tracking = false, lost = false, lostFrames = 0;
+  let tmpl = null, tmplNorm = 0, tmplOrig = null;
+  let cx = 0, cy = 0, size = 0;       // track state in proc coords; size = box side
+  let sx = 0, sy = 0;                 // smoothed position (for drawing)
+  let trail = [];                     // points in proc coords; null = gap
+  let lastScore = 0;
+  let frames = 0, fpsT = performance.now();
+
+  const setStatus = t => { $('status').textContent = t; };
+
+  // ---------- camera ----------
+  async function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus('Camera not supported (needs HTTPS)');
+      return;
+    }
+    stopCamera();
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+    } catch (e) {
+      setStatus('Camera blocked: ' + e.name);
+      return;
+    }
+    video.srcObject = stream;
+    await video.play();
+    const s = stream.getVideoTracks()[0].getSettings();
+    if (s.facingMode) facing = s.facingMode;
+
+    view.width = video.videoWidth;
+    view.height = video.videoHeight;
+    PW = PROC_W;
+    PH = Math.round(PROC_W * video.videoHeight / video.videoWidth);
+    proc.width = PW; proc.height = PH;
+    gray = new Float32Array(PW * PH);
+
+    $('splash').classList.add('hidden');
+    startBtn.textContent = 'Stop camera';
+    [trackBtn, clearBtn, flipBtn, saveBtn].forEach(b => b.disabled = false);
+    setStatus('Aim the box at an object, then press Track');
+    resetTracking();
+    if (!running) { running = true; requestAnimationFrame(loop); }
+  }
+
+  function stopCamera() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null;
+    running = false;
+    resetTracking();
+  }
+
+  const mirrored = () => facing === 'user';
+
+  // ---------- image helpers ----------
+  function grabGray() {
+    pctx.drawImage(video, 0, 0, PW, PH);
+    const d = pctx.getImageData(0, 0, PW, PH).data;
+    for (let i = 0, j = 0; i < gray.length; i++, j += 4) {
+      gray[i] = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2];
+    }
+  }
+
+  function bilinear(x, y) {
+    if (x < 0) x = 0; else if (x > PW - 1.001) x = PW - 1.001;
+    if (y < 0) y = 0; else if (y > PH - 1.001) y = PH - 1.001;
+    const x0 = x | 0, y0 = y | 0, fx = x - x0, fy = y - y0, i = y0 * PW + x0;
+    const a = gray[i], b = gray[i + 1], c = gray[i + PW], e = gray[i + PW + 1];
+    return (a + (b - a) * fx) * (1 - fy) + (c + (e - c) * fx) * fy;
+  }
+
+  // Resample a square region of side `side` centred on (x,y) into an n x n array.
+  function sampleRegion(x, y, side, n) {
+    const out = new Float32Array(n * n), step = side / n, x0 = x - (n - 1) / 2 * step, y0 = y - (n - 1) / 2 * step;
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) out[r * n + c] = bilinear(x0 + c * step, y0 + r * step);
+    return out;
+  }
+
+  function zeroMean(p) {
+    let m = 0; for (let i = 0; i < p.length; i++) m += p[i]; m /= p.length;
+    let s = 0; const z = new Float32Array(p.length);
+    for (let i = 0; i < p.length; i++) { z[i] = p[i] - m; s += z[i] * z[i]; }
+    return { z, norm: Math.sqrt(s) };
+  }
+
+  function setTemplate(patch) {
+    const { z, norm } = zeroMean(patch);
+    tmpl = z; tmplNorm = norm;
+  }
+
+  // NCC of the template against a T x T patch.
+  function nccPatch(patch) {
+    const { z, norm } = zeroMean(patch);
+    if (norm < 1e-3 || tmplNorm < 1e-3) return 0;
+    let s = 0; for (let i = 0; i < z.length; i++) s += z[i] * tmpl[i];
+    return s / (norm * tmplNorm);
+  }
+
+  // Search a region around (x,y) of radius R template-pixels with NCC. Returns best centre in proc coords.
+  function search(x, y, R, step) {
+    const n = T + 2 * R, scale = size / T;
+    const reg = sampleRegion(x, y, n * scale, n);
+    // integral images of value and value^2 for fast window mean/variance
+    const W = n + 1, I = new Float64Array(W * W), I2 = new Float64Array(W * W);
+    for (let r = 0; r < n; r++) {
+      let rs = 0, rs2 = 0;
+      for (let c = 0; c < n; c++) {
+        const v = reg[r * n + c]; rs += v; rs2 += v * v;
+        I[(r + 1) * W + c + 1] = I[r * W + c + 1] + rs;
+        I2[(r + 1) * W + c + 1] = I2[r * W + c + 1] + rs2;
+      }
+    }
+    const N = T * T;
+    const score = (ox, oy) => {
+      const a = oy * W + ox, b = a + T, c = a + T * W, d = c + T;
+      const sum = I[d] - I[b] - I[c] + I[a], sum2 = I2[d] - I2[b] - I2[c] + I2[a];
+      const v = sum2 - sum * sum / N;
+      if (v < 1e-3) return -1;
+      let s = 0;
+      for (let r = 0; r < T; r++) {
+        const ro = (oy + r) * n + ox, to = r * T;
+        for (let k = 0; k < T; k++) s += reg[ro + k] * tmpl[to + k];
+      }
+      return s / (Math.sqrt(v) * tmplNorm);
+    };
+    const max = 2 * R;
+    let best = -2, bx = R, by = R;
+    for (let oy = 0; oy <= max; oy += step) for (let ox = 0; ox <= max; ox += step) {
+      const s = score(ox, oy); if (s > best) { best = s; bx = ox; by = oy; }
+    }
+    // refine at single-pixel steps around the coarse best
+    if (step > 1) {
+      const cbx = bx, cby = by;
+      for (let oy = Math.max(0, cby - step + 1); oy <= Math.min(max, cby + step - 1); oy++)
+        for (let ox = Math.max(0, cbx - step + 1); ox <= Math.min(max, cbx + step - 1); ox++) {
+          const s = score(ox, oy); if (s > best) { best = s; bx = ox; by = oy; }
+        }
+    }
+    // sub-pixel parabolic refinement
+    let fx = bx, fy = by;
+    if (bx > 0 && bx < max) {
+      const l = score(bx - 1, by), r = score(bx + 1, by), den = l - 2 * best + r;
+      if (den < 0) fx += Math.max(-0.5, Math.min(0.5, 0.5 * (l - r) / den));
+    }
+    if (by > 0 && by < max) {
+      const u = score(bx, by - 1), dn = score(bx, by + 1), den = u - 2 * best + dn;
+      if (den < 0) fy += Math.max(-0.5, Math.min(0.5, 0.5 * (u - dn) / den));
+    }
+    return { x: x + (fx - R) * scale, y: y + (fy - R) * scale, score: best };
+  }
+
+  // ---------- tracking ----------
+  function resetTracking() {
+    tracking = false; lost = false; lostFrames = 0; trail = []; tmpl = null;
+    trackBtn.textContent = 'Track object';
+    $('score').textContent = '--';
+  }
+
+  function startTracking(x, y) {
+    grabGray();
+    size = PH * boxSize.value / 100;
+    cx = sx = x; cy = sy = y;
+    const patch = sampleRegion(cx, cy, size, T);
+    setTemplate(patch);
+    tmplOrig = { z: tmpl, norm: tmplNorm };
+    if (tmplNorm / T < 4) setStatus('Low detail in box - tracking may drift');
+    else setStatus('Tracking');
+    tracking = true; lost = false; lostFrames = 0; trail = [{ x: cx, y: cy }];
+    trackBtn.textContent = 'Stop tracking';
+  }
+
+  function trackStep() {
+    const R = lost ? 48 : 14, step = lost ? 3 : 2;
+    const r = search(cx, cy, R, step);
+    let best = r.score;
+    if (best > 0.4) {
+      cx = r.x; cy = r.y;
+      // try slightly smaller/larger box to follow scale change
+      if (!lost) {
+        for (const f of [0.94, 1.06]) {
+          const s = nccPatch(sampleRegion(cx, cy, size * f, T));
+          if (s > best + 0.01) { best = s; size *= f; }
+        }
+        size = Math.max(PH * 0.06, Math.min(PH * 0.8, size));
+      }
+    }
+    lastScore = best;
+
+    if (best >= (lost ? 0.65 : 0.45)) {
+      if (lost) { lost = false; setStatus('Tracking (re-acquired)'); trail.push(null); sx = cx; sy = cy; }
+      lostFrames = 0;
+      // adapt template slowly, anchored to the original so it doesn't drift away
+      if (best > 0.75) {
+        const cur = zeroMean(sampleRegion(cx, cy, size, T));
+        const mix = new Float32Array(T * T);
+        for (let i = 0; i < mix.length; i++)
+          mix[i] = 0.85 * tmpl[i] / tmplNorm + 0.1 * cur.z[i] / (cur.norm || 1) + 0.05 * tmplOrig.z[i] / tmplOrig.norm;
+        setTemplate(mix);
+      }
+      sx += (cx - sx) * 0.6; sy += (cy - sy) * 0.6;
+      const last = trail[trail.length - 1];
+      if (!last || Math.hypot(last.x - sx, last.y - sy) > 0.4) trail.push({ x: sx, y: sy });
+      if (trail.length > TRAIL_MAX) trail.splice(0, trail.length - TRAIL_MAX);
+    } else if (++lostFrames >= 4 && !lost) {
+      lost = true; setStatus('Lost object - searching...');
+    }
+    $('score').textContent = 'match ' + Math.round(Math.max(0, best) * 100) + '%';
+  }
+
+  // ---------- drawing ----------
+  function draw() {
+    const W = view.width, H = view.height, k = W / PW;
+    ctx.save();
+    if (mirrored()) { ctx.translate(W, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(video, 0, 0, W, H);
+
+    const lw = Math.max(3, W / 160);
+    // red line
+    ctx.strokeStyle = '#ff1a1a'; ctx.lineWidth = lw; ctx.lineJoin = ctx.lineCap = 'round';
+    ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = lw;
+    ctx.beginPath();
+    let pen = false;
+    for (const p of trail) {
+      if (!p) { pen = false; continue; }
+      if (pen) ctx.lineTo(p.x * k, p.y * k); else { ctx.moveTo(p.x * k, p.y * k); pen = true; }
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    if (tracking) {
+      const s = size * k;
+      ctx.strokeStyle = lost ? '#ffcc00' : '#ff1a1a';
+      ctx.lineWidth = lw * 0.6;
+      ctx.setLineDash(lost ? [lw * 2, lw * 2] : []);
+      ctx.strokeRect(sx * k - s / 2, sy * k - s / 2, s, s);
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ff1a1a';
+      ctx.beginPath(); ctx.arc(sx * k, sy * k, lw, 0, Math.PI * 2); ctx.fill();
+    } else {
+      // aiming reticle in the centre
+      const s = H * boxSize.value / 100, c = s / 4, x = W / 2 - s / 2, y = H / 2 - s / 2;
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = lw * 0.6;
+      ctx.shadowColor = '#000'; ctx.shadowBlur = 3;
+      ctx.beginPath();
+      ctx.moveTo(x, y + c); ctx.lineTo(x, y); ctx.lineTo(x + c, y);
+      ctx.moveTo(x + s - c, y); ctx.lineTo(x + s, y); ctx.lineTo(x + s, y + c);
+      ctx.moveTo(x + s, y + s - c); ctx.lineTo(x + s, y + s); ctx.lineTo(x + s - c, y + s);
+      ctx.moveTo(x + c, y + s); ctx.lineTo(x, y + s); ctx.lineTo(x, y + s - c);
+      ctx.moveTo(W / 2 - c / 2, H / 2); ctx.lineTo(W / 2 + c / 2, H / 2);
+      ctx.moveTo(W / 2, H / 2 - c / 2); ctx.lineTo(W / 2, H / 2 + c / 2);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  }
+
+  function loop() {
+    if (!running) return;
+    if (video.readyState >= 2) {
+      if (tracking) { grabGray(); trackStep(); }
+      draw();
+      frames++;
+      const now = performance.now();
+      if (now - fpsT > 1000) { $('fps').textContent = Math.round(frames * 1000 / (now - fpsT)) + ' fps'; frames = 0; fpsT = now; }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- UI ----------
+  startBtn.onclick = () => {
+    if (stream) {
+      stopCamera();
+      ctx.clearRect(0, 0, view.width, view.height);
+      $('splash').classList.remove('hidden');
+      startBtn.textContent = 'Start camera';
+      [trackBtn, clearBtn, flipBtn, saveBtn].forEach(b => b.disabled = true);
+      setStatus('Ready');
+    } else startCamera();
+  };
+
+  trackBtn.onclick = () => {
+    if (tracking) { tracking = false; trackBtn.textContent = 'Track object'; setStatus('Stopped - press Track to pick a new object'); }
+    else startTracking(PW / 2, PH / 2);
+  };
+
+  clearBtn.onclick = () => { trail = tracking && !lost ? [{ x: sx, y: sy }] : []; };
+
+  flipBtn.onclick = () => { facing = facing === 'user' ? 'environment' : 'user'; startCamera(); };
+
+  // Tap the video to track whatever is under your finger.
+  view.addEventListener('pointerdown', e => {
+    if (!stream) return;
+    const r = view.getBoundingClientRect();
+    let x = (e.clientX - r.left) / r.width;
+    if (mirrored()) x = 1 - x;
+    startTracking(x * PW, (e.clientY - r.top) / r.height * PH);
+  });
+
+  boxSize.oninput = () => { $('boxVal').textContent = boxSize.value + '%'; };
+
+  saveBtn.onclick = () => {
+    view.toBlob(async blob => {
+      const file = new File([blob], 'tracker-' + Date.now() + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; }
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && stream) startBtn.click();
+  });
+})();
+</script>
+</body>
+</html>
