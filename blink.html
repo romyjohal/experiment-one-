@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#008080">
+<title>Blink Counter 95</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M1 8q7-7 14 0q-7 7-14 0z%27 fill=%27%23fff%27 stroke=%27%23000%27/%3E%3Ccircle cx=%278%27 cy=%278%27 r=%272.5%27 fill=%27%23000080%27/%3E%3C/svg%3E">
+<style>
+  :root {
+    --desktop: #008080;
+    --face: #c0c0c0;
+    --light: #ffffff;
+    --mid: #dfdfdf;
+    --shadow: #808080;
+    --dark: #0a0a0a;
+    --title-a: #000080;
+    --title-b: #1084d0;
+    --text: #000000;
+    --font: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+    --mono: "Lucida Console", "Courier New", Courier, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--desktop); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    -webkit-user-select: none; user-select: none;
+  }
+  body {
+    display: flex; flex-direction: column;
+    height: 100vh; height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+  .raised {
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .sunken {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .desktop {
+    flex: 1; min-height: 0; padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+  }
+  .window {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    padding: 3px; width: 100%; max-width: 760px; margin: 0 auto;
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 3px;
+    background: linear-gradient(90deg, var(--title-a), var(--title-b));
+    color: #fff; font-weight: bold;
+  }
+  .titlebar .t-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .titlebar a { color: #fff; font-weight: normal; font-size: 12px; }
+
+  .screen {
+    flex: 1; min-height: 0; margin: 4px 0;
+    padding: 2px; background: #000; position: relative;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #view { max-width: 100%; max-height: 100%; display: block; touch-action: none; }
+  video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .splash {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; padding: 16px;
+    color: #c0c0c0; font-family: var(--mono); text-align: center;
+  }
+  .splash.hidden { display: none; }
+
+  .controls { display: flex; flex-direction: column; gap: 6px; padding: 2px 1px 4px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row .btn { flex: 1; }
+  .btn {
+    font: inherit; color: var(--text); border: 0; cursor: pointer;
+    min-height: 36px; padding: 4px 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .btn:active {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--dark),
+                inset -2px -2px var(--mid), inset 2px 2px var(--shadow);
+    padding: 5px 9px 3px 11px;
+  }
+  .btn.default { outline: 1px solid var(--dark); outline-offset: -1px; font-weight: bold; }
+  .btn:disabled { color: var(--shadow); text-shadow: 1px 1px var(--light); }
+  label.lbl { white-space: nowrap; min-width: 64px; }
+  .val { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; background: transparent;
+    flex: 1; height: 28px; margin: 0; min-width: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-moz-range-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 24px; margin-top: -10px; border: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 24px; border: 0; border-radius: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .statusbar { display: flex; gap: 2px; font-size: 12px; }
+  .statusbar > div { padding: 3px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .statusbar > div:first-child { flex: 1; }
+  .titlebar nav { display: flex; gap: 8px; }
+  #view { transform: scaleX(-1); }
+  .counter {
+    position: absolute; top: 8px; left: 8px; padding: 4px 10px 6px;
+    background: rgba(0,0,0,.6); color: #fff; font-family: var(--mono); text-align: center;
+    border: 1px solid #808080; pointer-events: none;
+  }
+  .counter b { display: block; font-size: 44px; line-height: 1; color: #33ff33; }
+  .counter span { font-size: 11px; color: #c0c0c0; }
+  .counter.flash b { color: #ffff00; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .stat { background: #fff; padding: 4px 6px; text-align: center; }
+  .stat small { display: block; font-size: 11px; color: #404040; }
+  .stat b { font-size: 16px; font-variant-numeric: tabular-nums; }
+  #graph { width: 100%; height: 56px; display: block; background: #000; }
+</style>
+</head>
+<body>
+<div class="desktop">
+  <div class="window raised">
+    <div class="titlebar">
+      <span class="t-text">Blink Counter 95</span>
+      <nav><a href="./">ASCII Cam</a><a href="tracker.html">Tracker</a></nav>
+    </div>
+
+    <div class="screen sunken">
+      <canvas id="view" aria-label="Camera view with eye outlines"></canvas>
+      <video id="video" playsinline muted></video>
+      <div class="counter" id="counter" hidden><b id="count">0</b><span>BLINKS</span></div>
+      <div class="splash" id="splash">
+        <div style="color:#fff;font-size:16px">BLINK COUNTER 95</div>
+        <div>Press <b>Start camera</b>, look at the screen,<br>and every blink is counted.</div>
+        <div style="font-size:11px;color:#808080">Face detection runs in your browser. Video never leaves your device.</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="stats">
+        <div class="stat sunken"><small>Blinks / min</small><b id="bpm">--</b></div>
+        <div class="stat sunken"><small>Time</small><b id="elapsed">0:00</b></div>
+        <div class="stat sunken"><small>Last blink</small><b id="since">--</b></div>
+      </div>
+      <canvas id="graph" class="sunken" aria-label="Eye openness over time"></canvas>
+      <div class="row">
+        <button class="btn default" id="startBtn">Start camera</button>
+        <button class="btn" id="resetBtn" disabled>Reset count</button>
+      </div>
+      <div class="row">
+        <label class="lbl" for="sens">Sensitivity</label>
+        <input type="range" id="sens" min="1" max="10" value="5">
+        <span class="val" id="sensVal">5</span>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <div class="sunken" id="status">Ready</div>
+      <div class="sunken" id="fps">-- fps</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  // MediaPipe Face Landmarker, loaded from a CDN and run on-device (WebAssembly + WebGL).
+  const MP_VER = '0.10.21';
+  const MP_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+  const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+
+  // Six landmarks per eye for the eye aspect ratio: corner, top, top, corner, bottom, bottom.
+  const EYES = [
+    [33, 160, 158, 133, 153, 144],
+    [362, 385, 387, 263, 373, 380],
+  ];
+  const EYE_OUTLINES = [
+    [33, 246, 161, 160, 159, 158, 157, 173, 133, 155, 154, 153, 145, 144, 163, 7],
+    [362, 398, 384, 385, 386, 387, 388, 466, 263, 249, 390, 373, 374, 380, 381, 382],
+  ];
+  const MIN_BLINK_MS = 40, MAX_BLINK_MS = 800;   // longer closures are not counted as blinks
+  const GRAPH_LEN = 240;
+
+  const $ = id => document.getElementById(id);
+  const video = $('video'), view = $('view'), ctx = view.getContext('2d');
+  const graph = $('graph'), gctx = graph.getContext('2d');
+  const startBtn = $('startBtn'), resetBtn = $('resetBtn'), sens = $('sens');
+  const setStatus = t => { $('status').textContent = t; };
+
+  let landmarker = null, stream = null, running = false, lastVideoTime = -1;
+  let count = 0, startedAt = 0, lastBlinkAt = 0, blinkTimes = [];
+  let closed = false, closedAt = 0;
+  let recent = [];           // recent EAR samples while eyes are open-ish, for the adaptive baseline
+  let baseline = 0;
+  let history = [];          // openness ratio, for the graph
+  let frames = 0, fpsT = performance.now();
+
+  // Sensitivity 1..10 maps to the openness ratio below which the eyes count as closed.
+  const closeThreshold = () => 0.5 + sens.value * 0.03;   // 0.53 .. 0.80
+  const openThreshold = () => closeThreshold() + 0.08;
+
+  async function loadModel() {
+    if (landmarker) return landmarker;
+    setStatus('Loading face model (~4 MB)...');
+    const { FilesetResolver, FaceLandmarker } = await import(`${MP_URL}/vision_bundle.mjs`);
+    const fileset = await FilesetResolver.forVisionTasks(`${MP_URL}/wasm`);
+    const make = delegate => FaceLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: MODEL_URL, delegate },
+      runningMode: 'VIDEO',
+      numFaces: 1,
+    });
+    try { landmarker = await make('GPU'); } catch (e) { landmarker = await make('CPU'); }
+    return landmarker;
+  }
+
+  async function start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setStatus('Camera not supported (needs HTTPS)');
+      return;
+    }
+    startBtn.disabled = true;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+      });
+    } catch (e) {
+      setStatus('Camera blocked: ' + e.name);
+      startBtn.disabled = false;
+      return;
+    }
+    video.srcObject = stream;
+    await video.play();
+    view.width = video.videoWidth; view.height = video.videoHeight;
+    $('splash').classList.add('hidden');
+    try { await loadModel(); }
+    catch (e) {
+      setStatus('Could not load face model - check your connection');
+      console.error(e);
+      stop();
+      startBtn.disabled = false;
+      return;
+    }
+    startBtn.disabled = false;
+    startBtn.textContent = 'Stop camera';
+    resetBtn.disabled = false;
+    $('counter').hidden = false;
+    reset();
+    setStatus('Calibrating - look at the screen');
+    running = true;
+    requestAnimationFrame(loop);
+  }
+
+  function stop() {
+    running = false;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null;
+    ctx.clearRect(0, 0, view.width, view.height);
+    $('splash').classList.remove('hidden');
+    $('counter').hidden = true;
+    startBtn.textContent = 'Start camera';
+    resetBtn.disabled = true;
+    setStatus('Ready');
+  }
+
+  function reset() {
+    count = 0; blinkTimes = []; lastBlinkAt = 0; startedAt = performance.now();
+    closed = false; history = [];
+    $('count').textContent = '0';
+  }
+
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+  function ear(lm, [p1, p2, p3, p4, p5, p6]) {
+    const w = dist(lm[p1], lm[p4]);
+    return w ? (dist(lm[p2], lm[p6]) + dist(lm[p3], lm[p5])) / (2 * w) : 0;
+  }
+
+  // Adaptive "eyes open" level: 80th percentile of the last ~3 s of samples.
+  function updateBaseline(v) {
+    recent.push(v);
+    if (recent.length > 90) recent.shift();
+    const sorted = recent.slice().sort((a, b) => a - b);
+    baseline = sorted[Math.floor(sorted.length * 0.8)];
+  }
+
+  function onBlink(now) {
+    count++;
+    lastBlinkAt = now;
+    blinkTimes.push(now);
+    $('count').textContent = count;
+    const c = $('counter');
+    c.classList.add('flash');
+    setTimeout(() => c.classList.remove('flash'), 150);
+  }
+
+  function process(lm, now) {
+    const v = (ear(lm, EYES[0]) + ear(lm, EYES[1])) / 2;
+    // Don't feed the baseline mid-blink, so closures don't drag it down (unless the eyes
+    // stay "closed" for a while, which usually means the head moved and the baseline is stale).
+    if (!closed || now - closedAt > 1500) updateBaseline(v);
+    const ratio = baseline ? v / baseline : 1;
+    history.push(ratio);
+    if (history.length > GRAPH_LEN) history.shift();
+
+    if (recent.length < 20) return ratio;  // still calibrating
+    if (!closed && ratio < closeThreshold()) {
+      closed = true; closedAt = now;
+    } else if (closed && ratio > openThreshold()) {
+      closed = false;
+      const d = now - closedAt;
+      if (d >= MIN_BLINK_MS && d <= MAX_BLINK_MS) onBlink(now);
+    }
+    return ratio;
+  }
+
+  function drawEyes(lm) {
+    const W = view.width, H = view.height;
+    ctx.lineWidth = Math.max(2, W / 320);
+    ctx.strokeStyle = closed ? '#ff3030' : '#33ff33';
+    for (const outline of EYE_OUTLINES) {
+      ctx.beginPath();
+      outline.forEach((i, k) => {
+        const p = lm[i];
+        k ? ctx.lineTo(p.x * W, p.y * H) : ctx.moveTo(p.x * W, p.y * H);
+      });
+      ctx.closePath();
+      ctx.stroke();
+    }
+  }
+
+  function drawGraph() {
+    const W = graph.width = graph.clientWidth * devicePixelRatio;
+    const H = graph.height = graph.clientHeight * devicePixelRatio;
+    const y = r => H - Math.max(0, Math.min(1.3, r)) / 1.3 * H;
+    gctx.fillStyle = '#000'; gctx.fillRect(0, 0, W, H);
+    gctx.strokeStyle = '#806000'; gctx.setLineDash([4, 4]); gctx.lineWidth = 1;
+    gctx.beginPath(); gctx.moveTo(0, y(closeThreshold())); gctx.lineTo(W, y(closeThreshold())); gctx.stroke();
+    gctx.setLineDash([]);
+    gctx.strokeStyle = '#33ff33'; gctx.lineWidth = 1.5 * devicePixelRatio;
+    gctx.beginPath();
+    history.forEach((r, i) => {
+      const x = W - (history.length - 1 - i) * W / (GRAPH_LEN - 1);
+      i ? gctx.lineTo(x, y(r)) : gctx.moveTo(x, y(r));
+    });
+    gctx.stroke();
+  }
+
+  const fmt = ms => { const s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+
+  function updateStats(now) {
+    const el = now - startedAt;
+    $('elapsed').textContent = fmt(el);
+    // blink rate over the last minute (or since start, if shorter)
+    blinkTimes = blinkTimes.filter(t => now - t < 60000);
+    const win = Math.min(60000, el);
+    $('bpm').textContent = win > 5000 ? Math.round(blinkTimes.length * 60000 / win) : '--';
+    $('since').textContent = lastBlinkAt ? ((now - lastBlinkAt) / 1000).toFixed(1) + 's' : '--';
+  }
+
+  function loop() {
+    if (!running) return;
+    const now = performance.now();
+    if (video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+      lastVideoTime = video.currentTime;
+      const res = landmarker.detectForVideo(video, now);
+      ctx.drawImage(video, 0, 0, view.width, view.height);
+      const lm = res.faceLandmarks && res.faceLandmarks[0];
+      if (lm) {
+        process(lm, now);
+        drawEyes(lm);
+        if (recent.length >= 20) setStatus(closed ? 'Eyes closed' : 'Watching for blinks');
+      } else {
+        closed = false;
+        setStatus('No face found - look at the camera');
+      }
+      drawGraph();
+      frames++;
+      if (now - fpsT > 1000) { $('fps').textContent = Math.round(frames * 1000 / (now - fpsT)) + ' fps'; frames = 0; fpsT = now; }
+    }
+    updateStats(now);
+    requestAnimationFrame(loop);
+  }
+
+  startBtn.onclick = () => (stream ? stop() : start());
+  resetBtn.onclick = reset;
+  sens.oninput = () => { $('sensVal').textContent = sens.value; };
+  document.addEventListener('visibilitychange', () => { if (document.hidden && stream) stop(); });
+</script>
+</body>
+</html>
