@@ -33,5 +33,5 @@ Take a photo with the front camera (or upload one) and it gets redrawn as a yell
 - This is a stylized filter, not a generative AI redraw, so the result keeps your hair, clothes and face shape rather than inventing a new character.
 
 ## Hosting
-It's a single static `index.html`. Enable GitHub Pages under **Settings → Pages → Deploy from a branch → `main` / root**.
+It's all static HTML files with no build step. Enable GitHub Pages under **Settings → Pages → Deploy from a branch → `main` / root**.
 Camera access needs HTTPS, which GitHub Pages provides.
