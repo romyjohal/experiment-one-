@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#008080">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ASCII Cam 95</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Crect x=%271%27 y=%274%27 width=%2711%27 height=%279%27 fill=%27%23c0c0c0%27 stroke=%27%23000%27/%3E%3Ccircle cx=%276.5%27 cy=%278.5%27 r=%272.5%27 fill=%27%23000080%27/%3E%3Cpath d=%27M12 7l3-2v8l-3-2z%27 fill=%27%23808080%27/%3E%3C/svg%3E">
+<style>
+  :root {
+    --desktop: #008080;
+    --face: #c0c0c0;
+    --light: #ffffff;
+    --mid: #dfdfdf;
+    --shadow: #808080;
+    --dark: #0a0a0a;
+    --title-a: #000080;
+    --title-b: #1084d0;
+    --text: #000000;
+    --screen-bg: #000000;
+    --screen-fg: #c0c0c0;
+    --font: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+    --mono: "Lucida Console", "Courier New", Courier, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--desktop); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    -webkit-user-select: none; user-select: none;
+    -webkit-font-smoothing: none;
+  }
+  body {
+    display: flex; flex-direction: column;
+    height: 100vh; height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* ---------- bevels ---------- */
+  .raised {
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .sunken {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .field {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow);
+  }
+
+  /* ---------- desktop ---------- */
+  .desktop {
+    flex: 1; min-height: 0; position: relative;
+    padding: 6px 6px 4px;
+    display: flex; flex-direction: column;
+  }
+  .icons {
+    position: absolute; top: 10px; left: 8px; display: none;
+    flex-direction: column; gap: 18px; z-index: 0;
+  }
+  .icon { width: 72px; text-align: center; color: #fff; font-size: 12px; }
+  .icon svg { display: block; margin: 0 auto 4px; }
+  .icon span { padding: 1px 2px; }
+
+  /* ---------- window ---------- */
+  .window {
+    position: relative; z-index: 1;
+    flex: 1; min-height: 0;
+    display: flex; flex-direction: column;
+    padding: 3px;
+    width: 100%; max-width: 760px; margin: 0 auto;
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 2px 0 3px;
+    background: linear-gradient(90deg, var(--title-a), var(--title-b));
+    color: #fff; font-weight: bold;
+  }
+  .titlebar .t-icon { width: 16px; height: 16px; flex: none; }
+  .titlebar .t-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .2px; }
+  .tb-btn {
+    width: 18px; height: 16px; padding: 0; border: 0; flex: none;
+    display: grid; place-items: center; cursor: pointer;
+  }
+  .tb-btn + .tb-btn.close { margin-left: 2px; }
+  .tb-btn svg { display: block; }
+
+  .menubar { display: flex; gap: 2px; padding: 2px 0; }
+  .menubar button {
+    background: none; border: 0; font: inherit; color: inherit;
+    padding: 3px 7px; cursor: pointer;
+  }
+  .menubar button:active, .menubar button.open { background: var(--title-a); color: #fff; }
+  .menubar u { text-decoration: underline; }
+
+  .menu {
+    position: absolute; z-index: 20; min-width: 170px; padding: 2px;
+    display: none;
+  }
+  .menu.show { display: block; }
+  .menu button {
+    display: flex; width: 100%; gap: 10px; justify-content: space-between;
+    background: none; border: 0; font: inherit; color: inherit; text-align: left;
+    padding: 6px 18px 6px 22px; cursor: pointer; position: relative;
+  }
+  .menu button:hover, .menu button:active { background: var(--title-a); color: #fff; }
+  .menu button.checked::before { content: "\2713"; position: absolute; left: 7px; }
+  .menu hr { border: 0; border-top: 1px solid var(--shadow); border-bottom: 1px solid var(--light); margin: 3px 2px; }
+
+  /* ---------- screen ---------- */
+  .screen {
+    flex: 1; min-height: 0; margin: 2px 0 4px;
+    padding: 2px; background: var(--screen-bg); position: relative;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #ascii {
+    margin: 0; padding: 0;
+    font-family: var(--mono); line-height: 1; letter-spacing: 0;
+    color: var(--screen-fg); white-space: pre;
+    font-variant-ligatures: none;
+    -webkit-user-select: text; user-select: text;
+  }
+  .screen.theme-green { --screen-fg: #33ff33; }
+  .screen.theme-amber { --screen-fg: #ffb000; }
+  .screen.theme-paper { --screen-bg: #ffffff; --screen-fg: #000000; background: #fff; }
+  .screen.theme-paper #ascii { color: #000; }
+
+  .splash {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; padding: 16px;
+    color: #c0c0c0; font-family: var(--mono); text-align: center; font-size: 13px;
+  }
+  .splash pre { margin: 0; font-family: var(--mono); font-size: 11px; line-height: 1.1; color: #fff; }
+  .splash.hidden { display: none; }
+
+  /* ---------- controls ---------- */
+  .controls { display: flex; flex-direction: column; gap: 6px; padding: 2px 1px 4px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row > .grow { flex: 1; }
+
+  .btn {
+    font: inherit; color: var(--text); border: 0; cursor: pointer;
+    min-height: 34px; padding: 4px 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .btn:active, .btn.pressed {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--dark),
+                inset -2px -2px var(--mid), inset 2px 2px var(--shadow);
+    padding: 5px 9px 3px 11px;
+  }
+  .btn.default { outline: 1px solid var(--dark); outline-offset: -1px; }
+  .btn:disabled { color: var(--shadow); text-shadow: 1px 1px var(--light); }
+  .btn:focus-visible { outline: 1px dotted #000; outline-offset: -5px; }
+
+  fieldset {
+    border: 0; margin: 0; padding: 10px 8px 8px; position: relative;
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--light);
+  }
+  legend { padding: 0 3px; position: absolute; top: -7px; left: 8px; background: var(--face); }
+
+  label.lbl { white-space: nowrap; min-width: 52px; }
+  .val { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+
+  select {
+    font: inherit; color: #000; background: #fff; border: 0; border-radius: 0;
+    min-height: 28px; padding: 2px 4px; flex: 1; min-width: 0;
+    -webkit-appearance: none; appearance: none;
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+    background-image: linear-gradient(var(--face), var(--face));
+    background-size: 20px 100%; background-position: right 2px top; background-repeat: no-repeat;
+  }
+  .sel-wrap { position: relative; flex: 1; display: flex; min-width: 0; }
+  .sel-wrap::after {
+    content: ""; position: absolute; right: 8px; top: 50%; margin-top: -2px; pointer-events: none;
+    border: 4px solid transparent; border-top: 4px solid #000; border-bottom: 0;
+  }
+
+  /* Win95 slider */
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; background: transparent;
+    flex: 1; height: 28px; margin: 0; min-width: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; background: #000;
+    box-shadow: 1px 1px var(--light), -1px -1px var(--shadow);
+  }
+  input[type=range]::-moz-range-track {
+    height: 4px; background: #000;
+    box-shadow: 1px 1px var(--light), -1px -1px var(--shadow);
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 24px; margin-top: -10px; border: 0;
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 24px; border: 0; border-radius: 0;
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+
+  /* Win95 checkbox */
+  .chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-height: 28px; }
+  .chk input {
+    -webkit-appearance: none; appearance: none; margin: 0;
+    width: 15px; height: 15px; background: #fff; flex: none; position: relative;
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .chk input:checked::after {
+    content: ""; position: absolute; left: 4px; top: 2px; width: 4px; height: 7px;
+    border: solid #000; border-width: 0 2px 2px 0; transform: rotate(40deg);
+  }
+
+  .statusbar { display: flex; gap: 2px; font-size: 12px; }
+  .statusbar > div { padding: 3px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .statusbar > div:first-child { flex: 1; }
+
+  /* ---------- taskbar ---------- */
+  .taskbar {
+    flex: none; display: flex; align-items: center; gap: 4px;
+    height: calc(34px + env(safe-area-inset-bottom));
+    padding: 3px 3px calc(3px + env(safe-area-inset-bottom));
+    background: var(--face); box-shadow: inset 0 1px var(--mid), inset 0 2px var(--light);
+  }
+  .start { font-weight: bold; min-height: 28px; padding: 2px 6px; }
+  .task {
+    flex: 1; min-width: 0; max-width: 200px; justify-content: flex-start;
+    min-height: 28px; font-weight: bold;
+    background-image: repeating-conic-gradient(var(--face) 0 25%, #fff 0 50%);
+    background-size: 2px 2px;
+  }
+  .task span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tray { margin-left: auto; padding: 4px 10px; display: flex; align-items: center; gap: 6px; min-height: 28px; }
+  .tray .dot { width: 8px; height: 8px; border-radius: 50%; background: #808080; }
+  .tray .dot.live { background: #ff2020; box-shadow: 0 0 3px #ff2020; }
+
+  /* ---------- dialog ---------- */
+  .dialog-bg {
+    position: fixed; inset: 0; z-index: 50; display: none;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .dialog-bg.show { display: flex; }
+  .dialog { width: 100%; max-width: 340px; padding: 3px; }
+  .dialog .body { display: flex; gap: 12px; padding: 14px 10px 10px; align-items: flex-start; line-height: 1.4; }
+  .dialog .body svg { flex: none; }
+  .dialog .actions { display: flex; justify-content: center; gap: 8px; padding: 4px 0 8px; }
+  .dialog .actions .btn { min-width: 84px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: calc(46px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+    z-index: 60; padding: 6px 10px; background: #ffffe1; color: #000;
+    border: 1px solid #000; font-size: 12px; display: none; white-space: nowrap;
+  }
+  .toast.show { display: block; }
+
+  @media (min-width: 900px) {
+    .icons { display: flex; }
+    .desktop { padding: 24px 24px 12px 110px; }
+  }
+  @media (orientation: landscape) and (max-height: 500px) {
+    .desktop { padding: 4px; }
+    .window {
+      max-width: none; display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px; grid-template-rows: auto minmax(0, 1fr);
+    }
+    .titlebar { grid-column: 1 / -1; }
+    .menubar, .statusbar { display: none; }
+    .screen { margin: 2px 4px 0 0; }
+    .side { min-height: 0; overflow: auto; padding-top: 2px; }
+    .controls .row:first-child { flex-wrap: wrap; }
+    .controls .row:first-child .btn { flex: 1 1 40%; }
+  }
+  @media (orientation: portrait), (min-height: 501px) {
+    .side { display: contents; }
+  }
+</style>
+</head>
+<body>
+
+<div class="desktop">
+  <div class="icons" aria-hidden="true">
+    <div class="icon">
+      <svg width="32" height="32" viewBox="0 0 32 32"><rect x="3" y="4" width="26" height="18" fill="#c0c0c0" stroke="#000"/><rect x="6" y="7" width="20" height="12" fill="#008080"/><rect x="10" y="22" width="12" height="3" fill="#808080"/><rect x="6" y="25" width="20" height="3" fill="#c0c0c0" stroke="#000"/></svg>
+      <span>My Computer</span>
+    </div>
+    <div class="icon">
+      <svg width="32" height="32" viewBox="0 0 32 32"><path d="M8 8h16l-2 20H10z" fill="#c0c0c0" stroke="#000"/><rect x="6" y="5" width="20" height="3" fill="#808080" stroke="#000"/></svg>
+      <span>Recycle Bin</span>
+    </div>
+  </div>
+
+  <div class="window raised" id="win">
+    <div class="titlebar">
+      <svg class="t-icon" viewBox="0 0 16 16"><rect x="1" y="4" width="11" height="9" fill="#c0c0c0" stroke="#000"/><circle cx="6.5" cy="8.5" r="2.5" fill="#000080" stroke="#000"/><path d="M12 7l3-2v8l-3-2z" fill="#808080" stroke="#000"/></svg>
+      <span class="t-text">ASCII Cam - Live</span>
+      <button class="tb-btn raised" aria-label="Minimize" data-act="freeze"><svg width="8" height="7"><rect x="0" y="5" width="6" height="2"/></svg></button>
+      <button class="tb-btn raised" aria-label="Fullscreen" data-act="fullscreen"><svg width="9" height="9"><rect x=".5" y=".5" width="8" height="8" fill="none" stroke="#000"/><rect x="0" y="0" width="9" height="2"/></svg></button>
+      <button class="tb-btn raised close" aria-label="Stop camera" data-act="stop"><svg width="8" height="7"><path d="M0 0h2l2 2 2-2h2L5 3.5 8 7H6L4 5 2 7H0l3-3.5z"/></svg></button>
+    </div>
+
+    <div class="menubar">
+      <button data-menu="file"><u>F</u>ile</button>
+      <button data-menu="view"><u>V</u>iew</button>
+      <button data-menu="help"><u>H</u>elp</button>
+    </div>
+
+    <div class="screen sunken" id="screen">
+      <pre id="ascii" aria-label="ASCII camera output"></pre>
+      <div class="splash" id="splash">
+<pre>
+ _____  _____  _____  _____  _____
+|  _  ||   __||     ||_   _||_   _|
+|     ||__   ||   --| _| |_  _| |_
+|__|__||_____||_____||_____||_____|
+         C  A  M    9  5
+</pre>
+        <div>Press <b>Start</b> to turn on your camera.</div>
+        <div style="font-size:11px;color:#808080">Video never leaves your device.</div>
+      </div>
+    </div>
+
+    <div class="side">
+      <div class="controls">
+        <div class="row">
+          <button class="btn default grow" id="startBtn">
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M3 1l10 6-10 6z" fill="#008000" stroke="#000"/></svg>
+            <span>Start</span>
+          </button>
+          <button class="btn grow" id="flipBtn" disabled>
+            <svg width="16" height="14" viewBox="0 0 16 14"><rect x="1" y="3" width="14" height="10" fill="#c0c0c0" stroke="#000"/><rect x="5" y="1" width="6" height="2" fill="#808080" stroke="#000"/><path d="M5 8a3 3 0 0 1 5-2m1 2a3 3 0 0 1-5 2" fill="none" stroke="#000080" stroke-width="1.4"/></svg>
+            <span>Flip</span>
+          </button>
+          <button class="btn grow" id="freezeBtn" disabled>
+            <svg width="12" height="14" viewBox="0 0 12 14"><rect x="1" y="1" width="3.5" height="12" fill="#000080"/><rect x="7.5" y="1" width="3.5" height="12" fill="#000080"/></svg>
+            <span>Freeze</span>
+          </button>
+          <button class="btn grow" id="snapBtn" disabled>
+            <svg width="14" height="14" viewBox="0 0 14 14"><path d="M1 1h10l2 2v10H1z" fill="#000080" stroke="#000"/><rect x="3" y="1" width="7" height="4" fill="#c0c0c0"/><rect x="3" y="8" width="8" height="5" fill="#fff"/></svg>
+            <span>Save</span>
+          </button>
+        </div>
+
+        <fieldset>
+          <legend>Settings</legend>
+          <div class="row">
+            <label class="lbl" for="detail">Detail</label>
+            <input type="range" id="detail" min="30" max="160" step="2" value="72">
+            <span class="val" id="detailVal">72</span>
+          </div>
+          <div class="row">
+            <label class="lbl" for="contrast">Contrast</label>
+            <input type="range" id="contrast" min="50" max="250" step="5" value="120">
+            <span class="val" id="contrastVal">1.2</span>
+          </div>
+          <div class="row">
+            <label class="lbl" for="charset">Chars</label>
+            <div class="sel-wrap">
+              <select id="charset">
+                <option value=" .:-=+*#%@">Classic</option>
+                <option value=" .'`^&quot;,:;Il!i&gt;&lt;~+_-?][}{1)(|\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&amp;8%B@$">Detailed</option>
+                <option value=" ░▒▓█">Blocks</option>
+                <option value=" .oO@">Bubbles</option>
+                <option value=" 01">Binary</option>
+                <option value=" ·•●">Dots</option>
+              </select>
+            </div>
+            <div class="sel-wrap" style="flex:.8">
+              <select id="theme" aria-label="Color theme">
+                <option value="">DOS Gray</option>
+                <option value="theme-green">Green</option>
+                <option value="theme-amber">Amber</option>
+                <option value="theme-paper">Paper</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="flex-wrap:wrap;gap:4px 14px">
+            <label class="chk"><input type="checkbox" id="invert"> Invert</label>
+            <label class="chk"><input type="checkbox" id="auto" checked> Auto levels</label>
+            <label class="chk"><input type="checkbox" id="mirror" checked> Mirror</label>
+          </div>
+        </fieldset>
+      </div>
+
+      <div class="statusbar">
+        <div class="sunken field" id="status">Ready</div>
+        <div class="sunken field" id="dims">--</div>
+        <div class="sunken field" id="fps">0 fps</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="taskbar">
+  <button class="btn start" id="startMenuBtn">
+    <svg width="18" height="16" viewBox="0 0 18 16"><path d="M2 2l6-1v6H2z" fill="#ff0000"/><path d="M9 1l7-1v7H9z" fill="#00a000"/><path d="M2 8h6v6l-6-1z" fill="#0000ff"/><path d="M9 8h7v7l-7-1z" fill="#ffd800"/></svg>
+    Start
+  </button>
+  <button class="btn task pressed">
+    <svg width="14" height="14" viewBox="0 0 16 16"><rect x="1" y="4" width="11" height="9" fill="#c0c0c0" stroke="#000"/><circle cx="6.5" cy="8.5" r="2.5" fill="#000080" stroke="#000"/><path d="M12 7l3-2v8l-3-2z" fill="#808080" stroke="#000"/></svg>
+    <span>ASCII Cam</span>
+  </button>
+  <div class="tray sunken field">
+    <span class="dot" id="recDot"></span>
+    <span id="clock">12:00 PM</span>
+  </div>
+</div>
+
+<!-- menus -->
+<div class="menu raised" id="menu-file">
+  <button data-act="start">Start camera</button>
+  <button data-act="stop">Stop camera</button>
+  <hr>
+  <button data-act="copy">Copy frame</button>
+  <button data-act="snap">Save frame as .txt</button>
+  <hr>
+  <button data-act="tracker">Open Tracker Cam...</button>
+  <button data-act="blink">Open Blink Counter...</button>
+  <button data-act="toon">Open Toon Booth...</button>
+  <hr>
+  <button data-act="desktop">Back to Desktop</button>
+</div>
+<div class="menu raised" id="menu-view">
+  <button data-act="fullscreen">Full screen</button>
+  <button data-act="toggle-invert" data-check="invert">Invert</button>
+  <button data-act="toggle-mirror" data-check="mirror">Mirror</button>
+</div>
+<div class="menu raised" id="menu-help">
+  <button data-act="about">About ASCII Cam...</button>
+</div>
+<div class="menu raised" id="menu-start">
+  <button data-act="start">Start camera</button>
+  <button data-act="flip">Switch camera</button>
+  <button data-act="snap">Save frame</button>
+  <button data-act="tracker">Tracker Cam</button>
+  <button data-act="blink">Blink Counter</button>
+  <button data-act="toon">Toon Booth</button>
+  <hr>
+  <button data-act="about">About...</button>
+  <button data-act="desktop">Back to Desktop</button>
+  <button data-act="stop">Shut Down...</button>
+</div>
+
+<div class="dialog-bg" id="dialogBg">
+  <div class="dialog raised" role="dialog" aria-modal="true">
+    <div class="titlebar"><span class="t-text" id="dlgTitle">ASCII Cam</span>
+      <button class="tb-btn raised close" aria-label="Close" id="dlgX"><svg width="8" height="7"><path d="M0 0h2l2 2 2-2h2L5 3.5 8 7H6L4 5 2 7H0l3-3.5z"/></svg></button>
+    </div>
+    <div class="body">
+      <svg id="dlgIcon" width="32" height="32" viewBox="0 0 32 32"></svg>
+      <div id="dlgMsg"></div>
+    </div>
+    <div class="actions"><button class="btn default" id="dlgOk">OK</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<video id="video" playsinline muted autoplay style="display:none"></video>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const video = $('video'), out = $('ascii'), screenEl = $('screen'), splash = $('splash');
+  const startBtn = $('startBtn'), flipBtn = $('flipBtn'), freezeBtn = $('freezeBtn'), snapBtn = $('snapBtn');
+  const detail = $('detail'), contrast = $('contrast'), charsetSel = $('charset'), themeSel = $('theme');
+  const invertChk = $('invert'), autoChk = $('auto'), mirrorChk = $('mirror');
+
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+  let stream = null, facing = 'user', running = false, frozen = false, rafId = 0;
+  let lastText = '', cols = +detail.value, rows = 0, layoutKey = '';
+  let charAspect = measureCharAspect();
+  let frames = 0, fpsTime = performance.now();
+
+  function measureCharAspect() {
+    const s = document.createElement('span');
+    s.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;line-height:1;font-size:100px;font-family:' +
+      getComputedStyle(document.documentElement).getPropertyValue('--mono');
+    s.textContent = 'M'.repeat(50);
+    document.body.appendChild(s);
+    const w = s.getBoundingClientRect().width / 50 / 100;
+    s.remove();
+    return w > 0.3 && w < 1 ? w : 0.6;
+  }
+
+  // ---------- camera ----------
+  async function start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return alertBox('Camera Error', 'This browser does not support camera access, or the page is not served over HTTPS.', 'error');
+    }
+    stopStream();
+    setStatus('Connecting to camera...');
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: facing }, width: { ideal: 640 }, height: { ideal: 480 } }
+      });
+    } catch (err) {
+      setStatus('Camera unavailable');
+      const msg = err && err.name === 'NotAllowedError'
+        ? 'Access to the camera was denied.<br><br>Allow camera permission for this site in your browser settings, then press Start again.'
+        : err && err.name === 'NotFoundError'
+          ? 'No camera was found on this device.'
+          : 'Could not start the camera.<br><br><small>' + (err && (err.name + ': ' + err.message)) + '</small>';
+      return alertBox('Camera Error', msg, 'error');
+    }
+    video.srcObject = stream;
+    try { await video.play(); } catch (_) {}
+    running = true; frozen = false;
+    // Detect actual facing mode where supported
+    const track = stream.getVideoTracks()[0];
+    const settings = track && track.getSettings ? track.getSettings() : {};
+    if (settings.facingMode) facing = settings.facingMode;
+    mirrorChk.checked = facing !== 'environment';
+    splash.classList.add('hidden');
+    updateButtons();
+    setStatus(facing === 'environment' ? 'Rear camera' : 'Front camera');
+    layoutKey = '';
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function stopStream() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+
+  function stop() {
+    stopStream();
+    running = false; frozen = false;
+    cancelAnimationFrame(rafId);
+    updateButtons();
+    setStatus('Camera off');
+    $('fps').textContent = '0 fps';
+  }
+
+  function updateButtons() {
+    startBtn.querySelector('span').textContent = running ? 'Stop' : 'Start';
+    startBtn.querySelector('svg').innerHTML = running
+      ? '<rect x="2" y="2" width="10" height="10" fill="#c00000" stroke="#000"/>'
+      : '<path d="M3 1l10 6-10 6z" fill="#008000" stroke="#000"/>';
+    flipBtn.disabled = !running;
+    freezeBtn.disabled = !running;
+    snapBtn.disabled = !lastText;
+    freezeBtn.classList.toggle('pressed', frozen);
+    freezeBtn.querySelector('span').textContent = frozen ? 'Resume' : 'Freeze';
+    $('recDot').classList.toggle('live', running && !frozen);
+    $('win').querySelector('.t-text').textContent = 'ASCII Cam - ' + (running ? (frozen ? 'Frozen' : 'Live') : 'Off');
+  }
+
+  // ---------- rendering ----------
+  function layout(vw, vh) {
+    const box = screenEl.getBoundingClientRect();
+    const availW = box.width - 6, availH = box.height - 6;
+    const key = [vw, vh, cols, availW | 0, availH | 0, charAspect].join('x');
+    if (key === layoutKey) return;
+    layoutKey = key;
+    rows = Math.max(4, Math.round(cols * (vh / vw) * charAspect));
+    canvas.width = cols; canvas.height = rows;
+    const fs = Math.min(availW / (cols * charAspect), availH / rows);
+    out.style.fontSize = Math.max(2, fs).toFixed(3) + 'px';
+    $('dims').textContent = cols + '×' + rows;
+  }
+
+  function loop() {
+    rafId = requestAnimationFrame(loop);
+    if (!running || frozen || video.readyState < 2 || !video.videoWidth) return;
+    layout(video.videoWidth, video.videoHeight);
+
+    ctx.save();
+    if (mirrorChk.checked) { ctx.translate(cols, 0); ctx.scale(-1, 1); }
+    ctx.drawImage(video, 0, 0, cols, rows);
+    ctx.restore();
+
+    const data = ctx.getImageData(0, 0, cols, rows).data;
+    const n = cols * rows;
+    const lum = new Float32Array(n);
+    let lo = 255, hi = 0;
+    for (let i = 0, p = 0; i < n; i++, p += 4) {
+      const l = 0.2126 * data[p] + 0.7152 * data[p + 1] + 0.0722 * data[p + 2];
+      lum[i] = l;
+      if (l < lo) lo = l;
+      if (l > hi) hi = l;
+    }
+    if (!autoChk.checked || hi - lo < 16) { lo = 0; hi = 255; }
+
+    const chars = charsetSel.value;
+    const last = chars.length - 1;
+    const k = +contrast.value / 100;
+    const inv = invertChk.checked !== (themeSel.value === 'theme-paper');
+    const range = hi - lo;
+    let s = '';
+    for (let y = 0, i = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++, i++) {
+        let v = (lum[i] - lo) / range;          // 0..1
+        v = (v - 0.5) * k + 0.5;                 // contrast around mid
+        if (v < 0) v = 0; else if (v > 1) v = 1;
+        if (inv) v = 1 - v;
+        s += chars[(v * last + 0.5) | 0];
+      }
+      s += '\n';
+    }
+    out.textContent = s;
+    if (!lastText) { lastText = s; updateButtons(); }
+    lastText = s;
+
+    frames++;
+    const now = performance.now();
+    if (now - fpsTime >= 1000) {
+      $('fps').textContent = Math.round(frames * 1000 / (now - fpsTime)) + ' fps';
+      frames = 0; fpsTime = now;
+    }
+  }
+
+  // ---------- actions ----------
+  async function flip() {
+    if (!running) return;
+    facing = facing === 'environment' ? 'user' : 'environment';
+    await start();
+  }
+
+  function toggleFreeze() {
+    if (!running) return;
+    frozen = !frozen;
+    updateButtons();
+    setStatus(frozen ? 'Frame frozen' : (facing === 'environment' ? 'Rear camera' : 'Front camera'));
+  }
+
+  function stamp() {
+    const d = new Date(), p = (x) => String(x).padStart(2, '0');
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds());
+  }
+
+  async function saveFrame() {
+    if (!lastText) return;
+    const name = 'ascii-cam-' + stamp() + '.txt';
+    const file = new File([lastText], name, { type: 'text/plain' });
+    // Prefer the native share sheet on phones
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: 'ASCII Cam' }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(file);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast('Saved ' + name);
+  }
+
+  async function copyFrame() {
+    if (!lastText) return toast('Nothing to copy yet');
+    try { await navigator.clipboard.writeText(lastText); toast('Frame copied to clipboard'); }
+    catch (_) { toast('Clipboard not available'); }
+  }
+
+  function fullscreen() {
+    const el = document.documentElement;
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+    } else if (el.requestFullscreen || el.webkitRequestFullscreen) {
+      (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+    } else {
+      toast('Full screen not supported');
+    }
+  }
+
+  function about() {
+    alertBox('About ASCII Cam',
+      '<b>ASCII Cam 95</b><br>Version 4.00.950<br><br>Turns your camera feed into live ASCII text. ' +
+      'Everything runs locally in your browser &mdash; no video is uploaded.', 'info');
+  }
+
+  const actions = {
+    start, stop, flip, freeze: toggleFreeze, snap: saveFrame, copy: copyFrame, fullscreen, about,
+    'toggle-invert': () => { invertChk.checked = !invertChk.checked; },
+    'toggle-mirror': () => { mirrorChk.checked = !mirrorChk.checked; },
+    tracker: () => { location.href = 'tracker.html'; },
+    blink: () => { location.href = 'blink.html'; },
+    toon: () => { location.href = 'toon.html'; },
+    desktop: () => { location.href = './'; },
+  };
+
+  // ---------- UI wiring ----------
+  startBtn.addEventListener('click', () => running ? stop() : start());
+  flipBtn.addEventListener('click', flip);
+  freezeBtn.addEventListener('click', toggleFreeze);
+  snapBtn.addEventListener('click', saveFrame);
+  screenEl.addEventListener('dblclick', toggleFreeze);
+
+  detail.addEventListener('input', () => { cols = +detail.value; $('detailVal').textContent = cols; layoutKey = ''; });
+  contrast.addEventListener('input', () => { $('contrastVal').textContent = (contrast.value / 100).toFixed(1); });
+  themeSel.addEventListener('change', () => {
+    screenEl.classList.remove('theme-green', 'theme-amber', 'theme-paper');
+    if (themeSel.value) screenEl.classList.add(themeSel.value);
+  });
+  charsetSel.addEventListener('change', () => { charAspect = measureCharAspect(); layoutKey = ''; });
+  window.addEventListener('resize', () => { layoutKey = ''; });
+
+  // Menus
+  let openMenu = null;
+  function closeMenus() {
+    document.querySelectorAll('.menu.show').forEach(m => m.classList.remove('show'));
+    document.querySelectorAll('.menubar button.open, #startMenuBtn.pressed').forEach(b => b.classList.remove('open', 'pressed'));
+    openMenu = null;
+  }
+  function showMenu(id, anchor, above) {
+    const m = $('menu-' + id);
+    if (openMenu === m) return closeMenus();
+    closeMenus();
+    m.querySelectorAll('[data-check]').forEach(b => b.classList.toggle('checked', $(b.dataset.check).checked));
+    m.classList.add('show');
+    const r = anchor.getBoundingClientRect();
+    m.style.left = Math.min(r.left, window.innerWidth - m.offsetWidth - 4) + 'px';
+    m.style.top = above ? (r.top - m.offsetHeight) + 'px' : r.bottom + 'px';
+    openMenu = m;
+  }
+  document.querySelectorAll('.menubar button').forEach(b => b.addEventListener('click', (e) => {
+    e.stopPropagation();
+    showMenu(b.dataset.menu, b, false);
+    if (openMenu) b.classList.add('open');
+  }));
+  $('startMenuBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    showMenu('start', e.currentTarget, true);
+    if (openMenu) e.currentTarget.classList.add('pressed');
+  });
+  document.addEventListener('click', (e) => {
+    const t = e.target.closest('[data-act]');
+    if (t) { closeMenus(); const fn = actions[t.dataset.act]; if (fn) fn(); return; }
+    if (!e.target.closest('.menu')) closeMenus();
+  });
+
+  // Dialog
+  const icons = {
+    error: '<circle cx="16" cy="16" r="14" fill="#ff0000" stroke="#800000"/><path d="M10 10l12 12M22 10L10 22" stroke="#fff" stroke-width="3"/>',
+    info: '<circle cx="16" cy="16" r="14" fill="#fff" stroke="#000"/><rect x="14" y="13" width="4" height="11" fill="#0000c0"/><circle cx="16" cy="9" r="2.2" fill="#0000c0"/>'
+  };
+  function alertBox(title, html, kind) {
+    $('dlgTitle').textContent = title;
+    $('dlgMsg').innerHTML = html;
+    $('dlgIcon').innerHTML = icons[kind] || icons.info;
+    $('dialogBg').classList.add('show');
+    $('dlgOk').focus();
+  }
+  const closeDlg = () => $('dialogBg').classList.remove('show');
+  $('dlgOk').addEventListener('click', closeDlg);
+  $('dlgX').addEventListener('click', closeDlg);
+
+  let toastTimer = 0;
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function setStatus(s) { $('status').textContent = s; }
+
+  function tick() {
+    $('clock').textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  tick(); setInterval(tick, 10000);
+
+  // Release the camera when the tab is hidden; resume when back
+  let resumeOnShow = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && running) { resumeOnShow = true; stop(); }
+    else if (!document.hidden && resumeOnShow) { resumeOnShow = false; start(); }
+  });
+
+  updateButtons();
+})();
+</script>
+</body>
+</html>

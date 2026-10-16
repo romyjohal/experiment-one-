@@ -1,10 +1,13 @@
-# ASCII Cam 95
+# Experiment 95
 
-A mobile-first web page that turns your phone's camera feed into live ASCII art, inside a Windows 95-style window.
+A collection of camera toys for your phone or computer, dressed up as Windows 95. The home page (`index.html`) is a Win95 desktop: double-click an icon (or tap it on a phone) to open a page. The Start menu lists every page on the site, and **My Computer** opens a folder view of the site.
 
-All processing happens in your browser. No video is uploaded anywhere.
+All processing happens in your browser. No video or photos are uploaded anywhere.
 
-## Features
+To add a page, add an entry to the `APPS` list in `index.html`. It then appears on the desktop, in the Start menu, in the folder view, and in the readme.
+
+## ASCII Cam (`ascii.html`)
+Turns your camera feed into live ASCII art.
 - Front and rear camera switching, with mirroring
 - Detail and contrast sliders, auto levels, and invert
 - Character sets: Classic, Detailed, Blocks, Bubbles, Binary, Dots
