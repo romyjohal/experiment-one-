@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#008080">
+<title>Toon Booth 95</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Ccircle cx=%278%27 cy=%279%27 r=%276.5%27 fill=%27%23ffd90f%27 stroke=%27%23000%27/%3E%3Ccircle cx=%275.5%27 cy=%277%27 r=%272.3%27 fill=%27%23fff%27 stroke=%27%23000%27 stroke-width=%27.7%27/%3E%3Ccircle cx=%279.5%27 cy=%277%27 r=%272.3%27 fill=%27%23fff%27 stroke=%27%23000%27 stroke-width=%27.7%27/%3E%3Ccircle cx=%275.8%27 cy=%277%27 r=%27.6%27/%3E%3Ccircle cx=%279.8%27 cy=%277%27 r=%27.6%27/%3E%3C/svg%3E">
+<style>
+  :root {
+    --desktop: #008080;
+    --face: #c0c0c0;
+    --light: #ffffff;
+    --mid: #dfdfdf;
+    --shadow: #808080;
+    --dark: #0a0a0a;
+    --title-a: #000080;
+    --title-b: #1084d0;
+    --text: #000000;
+    --font: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+    --mono: "Lucida Console", "Courier New", Courier, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--desktop); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    -webkit-user-select: none; user-select: none;
+  }
+  body {
+    display: flex; flex-direction: column;
+    height: 100vh; height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+  .raised {
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .sunken {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .desktop {
+    flex: 1; min-height: 0; padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+  }
+  .window {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    padding: 3px; width: 100%; max-width: 760px; margin: 0 auto;
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 3px;
+    background: linear-gradient(90deg, var(--title-a), var(--title-b));
+    color: #fff; font-weight: bold;
+  }
+  .titlebar .t-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .titlebar a { color: #fff; font-weight: normal; font-size: 12px; }
+
+  .screen {
+    flex: 1; min-height: 0; margin: 4px 0;
+    padding: 2px; background: #000; position: relative;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #view { max-width: 100%; max-height: 100%; display: block; touch-action: none; }
+  video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .splash {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; padding: 16px;
+    color: #c0c0c0; font-family: var(--mono); text-align: center;
+  }
+  .splash.hidden { display: none; }
+
+  .controls { display: flex; flex-direction: column; gap: 6px; padding: 2px 1px 4px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row .btn { flex: 1; }
+  .btn {
+    font: inherit; color: var(--text); border: 0; cursor: pointer;
+    min-height: 36px; padding: 4px 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .btn:active {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--dark),
+                inset -2px -2px var(--mid), inset 2px 2px var(--shadow);
+    padding: 5px 9px 3px 11px;
+  }
+  .btn.default { outline: 1px solid var(--dark); outline-offset: -1px; font-weight: bold; }
+  .btn:disabled { color: var(--shadow); text-shadow: 1px 1px var(--light); }
+  label.lbl { white-space: nowrap; min-width: 64px; }
+  .val { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; background: transparent;
+    flex: 1; height: 28px; margin: 0; min-width: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-moz-range-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 24px; margin-top: -10px; border: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 24px; border: 0; border-radius: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .statusbar { display: flex; gap: 2px; font-size: 12px; }
+  .statusbar > div { padding: 3px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .statusbar > div:first-child { flex: 1; }
+  .titlebar nav { display: flex; gap: 8px; }
+  #view { touch-action: none; }
+  #file { display: none; }
+  .hint {
+    position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+    background: #ffffe1; color: #000; border: 1px solid #000; padding: 2px 6px;
+    font-size: 11px; white-space: nowrap; pointer-events: none;
+  }
+  .busy {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.55); color: #fff; font-family: var(--mono); text-align: center; padding: 16px;
+    white-space: pre-line;
+  }
+  .busy[hidden] { display: none; }
+  .opts { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .opts select {
+    font: inherit; min-height: 28px; border: 0; border-radius: 0; background: #fff; padding: 2px 4px;
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow), inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-height: 28px; }
+  .chk input {
+    -webkit-appearance: none; appearance: none; margin: 0; width: 15px; height: 15px; background: #fff; position: relative;
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow), inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .chk input:checked::after {
+    content: ""; position: absolute; left: 4px; top: 2px; width: 4px; height: 7px;
+    border: solid #000; border-width: 0 2px 2px 0; transform: rotate(40deg);
+  }
+</style>
+</head>
+<body>
+<div class="desktop">
+  <div class="window raised">
+    <div class="titlebar">
+      <span class="t-text">Toon Booth 95</span>
+      <nav><a href="./">ASCII Cam</a><a href="tracker.html">Tracker</a><a href="blink.html">Blinks</a></nav>
+    </div>
+
+    <div class="screen sunken">
+      <canvas id="view" aria-label="Photo or cartoon result"></canvas>
+      <video id="video" playsinline muted></video>
+      <div class="splash" id="splash">
+        <div style="color:#ffd90f;font-size:16px">TOON BOOTH 95</div>
+        <div>Take a photo or upload one, and it gets<br>redrawn as a yellow Springfield-style cartoon.</div>
+        <div style="font-size:11px;color:#808080">Everything runs in your browser. Photos never leave your device.</div>
+      </div>
+      <div class="hint" id="hint" hidden>Hold the picture to see the original</div>
+      <div class="busy" id="busy" hidden></div>
+    </div>
+
+    <div class="controls">
+      <div class="row">
+        <button class="btn default" id="camBtn">Start camera</button>
+        <button class="btn" id="uploadBtn">Upload photo</button>
+        <input type="file" id="file" accept="image/*">
+      </div>
+      <div class="row">
+        <button class="btn" id="snapBtn" disabled>Take photo</button>
+        <button class="btn" id="saveBtn" disabled>Save image</button>
+      </div>
+      <div class="opts">
+        <label>Background
+          <select id="bg">
+            <option value="sky">Springfield sky</option>
+            <option value="photo">Original (cartoonized)</option>
+          </select>
+        </label>
+        <label class="chk"><input type="checkbox" id="stubble"> Stubble</label>
+      </div>
+      <div class="row">
+        <label class="lbl" for="lineW">Outlines</label>
+        <input type="range" id="lineW" min="1" max="8" value="4">
+        <span class="val" id="lineVal">4</span>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <div class="sunken" id="status">Ready</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  const MP_VER = '0.10.21';
+  const MP_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+  const FACE_MODEL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+  const SEG_MODEL = 'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/1/selfie_multiclass_256x256.tflite';
+  const MAX_SIDE = 720;
+
+  // Segmenter classes
+  const BG = 0, HAIR = 1, BODY_SKIN = 2, FACE_SKIN = 3, CLOTHES = 4, OTHER = 5;
+  const CLUSTERS = { [BG]: 5, [HAIR]: 1, [CLOTHES]: 3, [OTHER]: 3 };   // hair is one flat colour
+
+  const SKIN = [255, 217, 15];       // the classic yellow
+  const STUBBLE = '#d1b271';
+  const INK = '#000';
+
+  // Face landmark index lists (MediaPipe 478-point mesh)
+  const EYES = [
+    [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246],
+    [263, 249, 390, 373, 374, 380, 381, 382, 362, 398, 384, 385, 386, 387, 388, 466],
+  ];
+  const EYE_EAR = [[33, 160, 158, 133, 153, 144], [362, 385, 387, 263, 373, 380]];
+  const IRIS = [468, 473];
+  const BROWS = [
+    { upper: [70, 63, 105, 66, 107], lower: [46, 53, 52, 65, 55] },
+    { upper: [300, 293, 334, 296, 336], lower: [276, 283, 282, 295, 285] },
+  ];
+  const LIPS_OUTER = [61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185];
+  const LIPS_INNER = [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308, 415, 310, 311, 312, 13, 82, 81, 80, 191];
+  const UPPER_INNER = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308];
+  const FACE_OVAL = [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152,
+                     148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109];
+
+  const $ = id => document.getElementById(id);
+  const view = $('view'), vctx = view.getContext('2d'), video = $('video');
+  const camBtn = $('camBtn'), snapBtn = $('snapBtn'), saveBtn = $('saveBtn'), uploadBtn = $('uploadBtn');
+  const setStatus = t => { $('status').textContent = t; };
+  const busy = t => { $('busy').hidden = !t; $('busy').textContent = t || ''; };
+
+  let models = null, stream = null, previewing = false;
+  let analysis = null;     // cached result of the heavy steps, so option changes re-render quickly
+  let result = null;       // rendered cartoon canvas
+  let showingOriginal = false;
+
+  // ---------- models ----------
+  async function loadModels() {
+    if (models) return models;
+    busy('Loading cartoon models...\n(~20 MB, first time only)');
+    setStatus('Loading models...');
+    const { FilesetResolver, FaceLandmarker, ImageSegmenter } = await import(`${MP_URL}/vision_bundle.mjs`);
+    const fileset = await FilesetResolver.forVisionTasks(`${MP_URL}/wasm`);
+    const withFallback = async make => { try { return await make('GPU'); } catch (e) { return await make('CPU'); } };
+    const [face, seg] = await Promise.all([
+      withFallback(delegate => FaceLandmarker.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: FACE_MODEL, delegate }, runningMode: 'IMAGE', numFaces: 4,
+      })),
+      withFallback(delegate => ImageSegmenter.createFromOptions(fileset, {
+        baseOptions: { modelAssetPath: SEG_MODEL, delegate }, runningMode: 'IMAGE',
+        outputCategoryMask: true, outputConfidenceMasks: false,
+      })),
+    ]);
+    models = { face, seg };
+    return models;
+  }
+
+  // ---------- camera ----------
+  async function startCamera() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setStatus('Camera not supported (needs HTTPS)'); return; }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 960 } } });
+    } catch (e) { setStatus('Camera blocked: ' + e.name); return; }
+    video.srcObject = stream;
+    await video.play();
+    $('splash').classList.add('hidden');
+    $('hint').hidden = true;
+    camBtn.textContent = 'Stop camera';
+    snapBtn.disabled = false;
+    setStatus('Line up your face and press Take photo');
+    previewing = true;
+    loadModels().then(() => busy(null)).catch(() => {});   // warm up while the user poses
+    requestAnimationFrame(preview);
+  }
+
+  function stopCamera() {
+    previewing = false;
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null;
+    camBtn.textContent = 'Start camera';
+    snapBtn.disabled = true;
+  }
+
+  function preview() {
+    if (!previewing) return;
+    if (video.readyState >= 2) {
+      view.width = video.videoWidth; view.height = video.videoHeight;
+      vctx.save(); vctx.translate(view.width, 0); vctx.scale(-1, 1);
+      vctx.drawImage(video, 0, 0); vctx.restore();
+    }
+    requestAnimationFrame(preview);
+  }
+
+  function snap() {
+    const c = document.createElement('canvas');
+    c.width = video.videoWidth; c.height = video.videoHeight;
+    const x = c.getContext('2d');
+    x.translate(c.width, 0); x.scale(-1, 1);   // keep it mirrored, like the preview
+    x.drawImage(video, 0, 0);
+    stopCamera();
+    toonify(c);
+  }
+
+  // ---------- image helpers ----------
+  function fitCanvas(src) {
+    const w0 = src.width, h0 = src.height, k = Math.min(1, MAX_SIDE / Math.max(w0, h0));
+    const c = document.createElement('canvas');
+    c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
+    c.getContext('2d').drawImage(src, 0, 0, c.width, c.height);
+    return c;
+  }
+
+  // Edge-preserving smoothing so flat colour regions come out clean.
+  function bilateral(src, W, H, r, sigmaC) {
+    const out = new Uint8ClampedArray(src.length);
+    const lut = new Float32Array(766);
+    for (let i = 0; i < lut.length; i++) lut[i] = Math.exp(-(i * i) / (2 * sigmaC * sigmaC * 3));
+    const sw = [];
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) sw.push([dx, dy, Math.exp(-(dx * dx + dy * dy) / (2 * r * r))]);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4, r0 = src[i], g0 = src[i + 1], b0 = src[i + 2];
+      let R = 0, G = 0, B = 0, S = 0;
+      for (const [dx, dy, ws] of sw) {
+        const xx = Math.min(W - 1, Math.max(0, x + dx)), yy = Math.min(H - 1, Math.max(0, y + dy));
+        const j = (yy * W + xx) * 4, r1 = src[j], g1 = src[j + 1], b1 = src[j + 2];
+        const w = ws * lut[Math.abs(r1 - r0) + Math.abs(g1 - g0) + Math.abs(b1 - b0)];
+        R += r1 * w; G += g1 * w; B += b1 * w; S += w;
+      }
+      out[i] = R / S; out[i + 1] = G / S; out[i + 2] = B / S; out[i + 3] = 255;
+    }
+    return out;
+  }
+
+  // k-means on the pixels of one class; deterministic init from luminance quantiles.
+  function kmeans(px, idxs, k) {
+    const step = Math.max(1, Math.floor(idxs.length / 4000)), samples = [];
+    for (let n = 0; n < idxs.length; n += step) { const i = idxs[n] * 4; samples.push([px[i], px[i + 1], px[i + 2]]); }
+    if (!samples.length) return { centers: [], assign: () => 0 };
+    k = Math.min(k, samples.length);
+    const lum = c => c[0] * 0.299 + c[1] * 0.587 + c[2] * 0.114;
+    const sorted = samples.slice().sort((a, b) => lum(a) - lum(b));
+    let centers = [];
+    for (let c = 0; c < k; c++) centers.push(sorted[Math.floor((c + 0.5) / k * sorted.length)].slice());
+    const nearest = (r, g, b) => {
+      let best = 0, bd = Infinity;
+      for (let c = 0; c < centers.length; c++) {
+        const d = (r - centers[c][0]) ** 2 + (g - centers[c][1]) ** 2 + (b - centers[c][2]) ** 2;
+        if (d < bd) { bd = d; best = c; }
+      }
+      return best;
+    };
+    for (let it = 0; it < 10; it++) {
+      const acc = centers.map(() => [0, 0, 0, 0]);
+      for (const s of samples) { const a = acc[nearest(s[0], s[1], s[2])]; a[0] += s[0]; a[1] += s[1]; a[2] += s[2]; a[3]++; }
+      centers = centers.map((c, i) => acc[i][3] ? [acc[i][0] / acc[i][3], acc[i][1] / acc[i][3], acc[i][2] / acc[i][3]] : c);
+    }
+    return { centers: centers.map(punchUp), assign: nearest };
+  }
+
+  // Cartoon colours: more saturated, slightly brighter.
+  function punchUp([r, g, b]) {
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+    const k = 1.35;
+    const f = v => Math.max(0, Math.min(255, l + (v - l) * k + 10));
+    return [f(r), f(g), f(b)];
+  }
+
+  function modeFilter(lab, W, H) {
+    const out = new Int16Array(lab.length), cnt = new Map();
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      cnt.clear();
+      let best = lab[y * W + x], bc = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = Math.min(W - 1, Math.max(0, x + dx)), yy = Math.min(H - 1, Math.max(0, y + dy));
+        const v = lab[yy * W + xx], c = (cnt.get(v) || 0) + 1;
+        cnt.set(v, c);
+        if (c > bc) { bc = c; best = v; }
+      }
+      out[y * W + x] = best;
+    }
+    return out;
+  }
+
+  // ---------- analysis (slow part, done once per photo) ----------
+  async function analyze(src) {
+    const base = fitCanvas(src), W = base.width, H = base.height;
+    const { face, seg } = await loadModels();
+    busy('Drawing your cartoon...');
+    await new Promise(r => setTimeout(r, 30));   // let the overlay paint
+
+    const faces = face.detect(base).faceLandmarks || [];
+    const segRes = seg.segment(base);
+    const mask = segRes.categoryMask, mw = mask.width, mh = mask.height, m = mask.getAsUint8Array();
+    let cls = new Int16Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++)
+      cls[y * W + x] = m[Math.min(mh - 1, (y * mh / H) | 0) * mw + Math.min(mw - 1, (x * mw / W) | 0)];
+    if (segRes.close) segRes.close();
+    cls = modeFilter(modeFilter(cls, W, H), W, H);
+
+    const orig = base.getContext('2d').getImageData(0, 0, W, H).data;
+    const smooth = bilateral(bilateral(orig, W, H, 3, 22), W, H, 2, 18);
+
+    const byClass = {};
+    for (let i = 0; i < cls.length; i++) (byClass[cls[i]] ||= []).push(i);
+    const km = {};
+    for (const c of [BG, HAIR, CLOTHES, OTHER]) km[c] = kmeans(smooth, byClass[c] || [], CLUSTERS[c]);
+
+    // labels: class * 16 + cluster; all skin shares one label
+    let lab = new Int16Array(W * H);
+    for (let i = 0; i < lab.length; i++) {
+      const c = cls[i];
+      if (c === BODY_SKIN || c === FACE_SKIN) { lab[i] = FACE_SKIN * 16; continue; }
+      const k = km[c] || km[OTHER];
+      lab[i] = c * 16 + k.assign(smooth[i * 4], smooth[i * 4 + 1], smooth[i * 4 + 2]);
+    }
+    for (let n = 0; n < 4; n++) lab = modeFilter(lab, W, H);   // remove speckles
+
+    return { W, H, base, orig, smooth, lab, km, faces };
+  }
+
+  // ---------- rendering (fast, re-run when options change) ----------
+  function render(a, opts) {
+    const { W, H, lab, km, faces } = a;
+    const t = opts.line * Math.max(W, H) / 720 * 0.9;   // outline thickness in px
+    const sky = opts.bg === 'sky';
+
+    // 1. flat colours
+    const img = new ImageData(W, H), d = img.data;
+    for (let i = 0; i < lab.length; i++) {
+      const c = lab[i] >> 4, k = lab[i] & 15, o = i * 4;
+      if (c === FACE_SKIN) { d[o] = SKIN[0]; d[o + 1] = SKIN[1]; d[o + 2] = SKIN[2]; d[o + 3] = 255; continue; }
+      if (c === BG && sky) { d[o + 3] = 0; continue; }
+      const col = (km[c] || km[OTHER]).centers[k] || [128, 128, 128];
+      d[o] = col[0]; d[o + 1] = col[1]; d[o + 2] = col[2]; d[o + 3] = 255;
+    }
+
+    // 2. ink lines: thick between classes, thin between colour regions of the same class
+    const stamp = (cx, cy, r) => {
+      const ri = Math.ceil(r);
+      for (let dy = -ri; dy <= ri; dy++) for (let dx = -ri; dx <= ri; dx++) {
+        if (dx * dx + dy * dy > r * r) continue;
+        const x = cx + dx, y = cy + dy;
+        if (x < 0 || y < 0 || x >= W || y >= H) continue;
+        const o = (y * W + x) * 4; d[o] = d[o + 1] = d[o + 2] = 0; d[o + 3] = 255;
+      }
+    };
+    const thick = t / 2, thin = Math.max(0.6, t / 5);
+    for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+      const i = y * W + x, a0 = lab[i];
+      for (const j of [i + 1, i + W]) {
+        const b0 = lab[j];
+        if (a0 === b0) continue;
+        const ca = a0 >> 4, cb = b0 >> 4;
+        if (ca === BG && cb === BG) { if (!sky) stamp(x, y, thin); continue; }
+        stamp(x, y, ca !== cb ? thick : thin);
+      }
+    }
+
+    const layer = document.createElement('canvas');
+    layer.width = W; layer.height = H;
+    layer.getContext('2d').putImageData(img, 0, 0);
+
+    const out = document.createElement('canvas');
+    out.width = W; out.height = H;
+    const ctx = out.getContext('2d');
+    if (sky) drawSky(ctx, W, H, t);
+    ctx.drawImage(layer, 0, 0);
+
+    // 3. hand-drawn face features
+    for (const lm of faces) drawFace(ctx, lm, W, H, t, opts, a);
+    return out;
+  }
+
+  function drawSky(ctx, W, H, t) {
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#5aa9e6'); g.addColorStop(1, '#a8d8f8');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const s = Math.max(W, H) / 720;
+    const clouds = [[0.12, 0.14, 1], [0.78, 0.1, 1.2], [0.5, 0.3, 0.8], [0.9, 0.42, 0.9], [0.08, 0.5, 0.7]];
+    ctx.lineWidth = Math.max(1, t * 0.5); ctx.strokeStyle = '#7fb7dd'; ctx.fillStyle = '#fff';
+    for (const [cx, cy, k] of clouds) {
+      const puffs = [[-60, 8, 34], [-25, -12, 44], [20, -18, 48], [60, 2, 36], [5, 14, 40]];
+      ctx.beginPath();
+      for (const [dx, dy, r] of puffs) { ctx.moveTo(cx * W + (dx + r) * s * k, cy * H + dy * s * k); ctx.arc(cx * W + dx * s * k, cy * H + dy * s * k, r * s * k, 0, Math.PI * 2); }
+      ctx.stroke(); ctx.fill();
+    }
+  }
+
+  function drawFace(ctx, lm, W, H, t, opts, a) {
+    const P = i => [lm[i].x * W, lm[i].y * H];
+    const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+    const path = (idx, close = true) => {
+      const p = new Path2D();
+      idx.forEach((i, n) => { const [x, y] = P(i); n ? p.lineTo(x, y) : p.moveTo(x, y); });
+      if (close) p.closePath();
+      return p;
+    };
+    const skin = `rgb(${SKIN.join(',')})`;
+    ctx.lineJoin = ctx.lineCap = 'round';
+
+    // hide the real lips and brows under flat skin
+    ctx.fillStyle = skin; ctx.strokeStyle = skin; ctx.lineWidth = t * 1.5;
+    const lips = path(LIPS_OUTER);
+    ctx.fill(lips); ctx.stroke(lips);
+    for (const b of BROWS) { const p = path([...b.upper, ...b.lower]); ctx.fill(p); ctx.stroke(p); }
+
+    const mouthW = dist(P(61), P(291));
+
+    // stubble muzzle, clipped to the face outline
+    if (opts.stubble) {
+      const nose = P(2), chin = P(152);
+      const cx = (P(61)[0] + P(291)[0]) / 2, top = nose[1] + (chin[1] - nose[1]) * 0.08;
+      const bottom = chin[1] + (chin[1] - nose[1]) * 0.05;
+      ctx.save();
+      ctx.clip(path(FACE_OVAL));
+      ctx.beginPath();
+      ctx.ellipse(cx, (top + bottom) / 2, mouthW * 1.05, (bottom - top) / 2, 0, 0, Math.PI * 2);
+      ctx.fillStyle = STUBBLE; ctx.fill();
+      ctx.lineWidth = t * 0.8; ctx.strokeStyle = INK; ctx.stroke();
+      ctx.restore();
+    }
+
+    // mouth: teeth/inside when open, otherwise a single line
+    const open = dist(P(13), P(14)) > mouthW * 0.08;
+    if (open) {
+      const inner = path(LIPS_INNER);
+      fillMouth(ctx, inner, a, W, H);
+      ctx.lineWidth = t * 0.8; ctx.strokeStyle = INK; ctx.stroke(inner);
+    } else {
+      ctx.lineWidth = t * 0.8; ctx.strokeStyle = INK; ctx.stroke(path(UPPER_INNER, false));
+    }
+
+    // nose: an outlined bump around the tip
+    const tip = P(1), nl = P(98), nr = P(327), nw = dist(nl, nr) * 0.42;
+    ctx.beginPath();
+    ctx.ellipse(tip[0], tip[1], nw, nw * 0.8, 0, Math.PI * 0.05, Math.PI * 0.95, true);
+    ctx.lineWidth = t * 0.7; ctx.strokeStyle = INK; ctx.stroke();
+
+    // big round eyes
+    const eyes = EYES.map((idx, e) => {
+      let cx = 0, cy = 0;
+      for (const i of idx) { const [x, y] = P(i); cx += x; cy += y; }
+      cx /= idx.length; cy /= idx.length;
+      const [c1, t1, t2, c2, b1, b2] = EYE_EAR[e].map(P);
+      const w = dist(c1, c2), ear = (dist(t1, b2) + dist(t2, b1)) / (2 * w);
+      return { cx, cy, r: w * 0.98, ear };
+    });
+    const irises = IRIS.map(P);
+    for (const e of eyes) {
+      ctx.beginPath(); ctx.arc(e.cx, e.cy, e.r, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.lineWidth = t * 0.8; ctx.strokeStyle = INK; ctx.stroke();
+      // pupil follows the real iris
+      const iris = irises.reduce((p, q) => dist(p, [e.cx, e.cy]) < dist(q, [e.cx, e.cy]) ? p : q);
+      let dx = (iris[0] - e.cx) * 1.8, dy = (iris[1] - e.cy) * 1.8;
+      const len = Math.hypot(dx, dy), max = e.r * 0.5;
+      if (len > max) { dx *= max / len; dy *= max / len; }
+      ctx.beginPath(); ctx.arc(e.cx + dx, e.cy + dy, Math.max(1.5, e.r * 0.16), 0, Math.PI * 2);
+      ctx.fillStyle = INK; ctx.fill();
+      // sleepy / squinting: drop an eyelid over the top
+      if (e.ear < 0.17) {
+        const lidY = e.cy - e.r + e.r * 2 * Math.min(0.85, (0.25 - e.ear) / 0.17);
+        ctx.save();
+        ctx.beginPath(); ctx.arc(e.cx, e.cy, e.r, 0, Math.PI * 2); ctx.clip();
+        ctx.fillStyle = skin; ctx.fillRect(e.cx - e.r, e.cy - e.r, e.r * 2, lidY - (e.cy - e.r));
+        ctx.restore();
+        ctx.beginPath(); ctx.arc(e.cx, e.cy, e.r, 0, Math.PI * 2); ctx.stroke();
+        const hw = Math.sqrt(Math.max(0, e.r * e.r - (lidY - e.cy) ** 2));
+        ctx.beginPath(); ctx.moveTo(e.cx - hw, lidY); ctx.lineTo(e.cx + hw, lidY); ctx.stroke();
+      }
+    }
+
+    // brows: thin ink strokes kept just above the (now much bigger) eyes
+    BROWS.forEach((b, n) => {
+      const e = eyes.reduce((p, q) => Math.abs(p.cx - P(b.upper[2])[0]) < Math.abs(q.cx - P(b.upper[2])[0]) ? p : q);
+      const pts = b.upper.map(P);
+      const lift = Math.max(0, Math.max(...pts.map(p => p[1])) - (e.cy - e.r - t * 1.5));
+      ctx.beginPath();
+      pts.forEach(([x, y], k) => k ? ctx.lineTo(x, y - lift) : ctx.moveTo(x, y - lift));
+      ctx.lineWidth = t * 0.7; ctx.strokeStyle = INK; ctx.stroke();
+    });
+  }
+
+  // Inside an open mouth: light pixels become white teeth, dark ones the mouth interior.
+  function fillMouth(ctx, inner, a, W, H) {
+    const m = document.createElement('canvas'); m.width = W; m.height = H;
+    const mx = m.getContext('2d'); mx.fill(inner);
+    const md = mx.getImageData(0, 0, W, H).data;
+    const idx = [];
+    let sum = 0;
+    for (let i = 0; i < W * H; i++) if (md[i * 4 + 3] > 127) {
+      const o = i * 4, l = a.smooth[o] * 0.299 + a.smooth[o + 1] * 0.587 + a.smooth[o + 2] * 0.114;
+      idx.push([i, l]); sum += l;
+    }
+    if (!idx.length) return;
+    const thr = sum / idx.length;
+    const img = mx.createImageData(W, H), d = img.data;
+    for (const [i, l] of idx) {
+      const o = i * 4, teeth = l > thr;
+      d[o] = teeth ? 255 : 110; d[o + 1] = teeth ? 255 : 26; d[o + 2] = teeth ? 245 : 30; d[o + 3] = 255;
+    }
+    mx.putImageData(img, 0, 0);
+    ctx.drawImage(m, 0, 0);
+  }
+
+  // ---------- flow ----------
+  const opts = () => ({ bg: $('bg').value, stubble: $('stubble').checked, line: +$('lineW').value });
+
+  function show(canvas) {
+    view.width = canvas.width; view.height = canvas.height;
+    vctx.drawImage(canvas, 0, 0);
+  }
+
+  async function toonify(src) {
+    $('splash').classList.add('hidden');
+    show(fitCanvas(src));
+    saveBtn.disabled = true;
+    try {
+      analysis = await analyze(src);
+    } catch (e) {
+      console.error(e);
+      busy(null);
+      setStatus('Could not load the models - check your connection');
+      return;
+    }
+    rerender();
+    busy(null);
+    saveBtn.disabled = false;
+    $('hint').hidden = false;
+    const n = analysis.faces.length;
+    setStatus(n ? `Done! ${n} face${n > 1 ? 's' : ''} toonified` : 'No face found - cartoonized the photo anyway');
+  }
+
+  function rerender() {
+    if (!analysis) return;
+    result = render(analysis, opts());
+    show(result);
+  }
+
+  camBtn.onclick = () => (stream ? stopCamera() : startCamera());
+  snapBtn.onclick = snap;
+  uploadBtn.onclick = () => $('file').click();
+  $('file').onchange = async e => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    if (!f) return;
+    stopCamera();
+    try { toonify(await createImageBitmap(f, { imageOrientation: 'from-image' })); }
+    catch (err) { setStatus('Could not open that image'); }
+  };
+  $('bg').onchange = $('stubble').onchange = rerender;
+  $('lineW').oninput = () => { $('lineVal').textContent = $('lineW').value; };
+  $('lineW').onchange = rerender;
+
+  // press and hold to compare with the original
+  view.addEventListener('pointerdown', () => { if (result && !previewing) { show(analysis.base); showingOriginal = true; } });
+  const restore = () => { if (showingOriginal) { show(result); showingOriginal = false; } };
+  view.addEventListener('pointerup', restore);
+  view.addEventListener('pointerleave', restore);
+  view.addEventListener('pointercancel', restore);
+
+  saveBtn.onclick = () => {
+    if (!result) return;
+    result.toBlob(async blob => {
+      const file = new File([blob], 'toon-' + Date.now() + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; }
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  };
+</script>
+</body>
+</html>

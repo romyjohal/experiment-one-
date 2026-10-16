@@ -24,6 +24,11 @@ Uses the front camera to count how many times you blink, and shows blinks per mi
 - A blink is counted when the eye aspect ratio drops below a set fraction of your normal open-eye level (which it learns automatically) and comes back within 40–800 ms. Longer closures aren't counted.
 - Use the **Sensitivity** slider if it misses blinks (raise it) or counts extra ones (lower it).
 
+## Toon Booth (`toon.html`)
+Take a photo with the front camera (or upload one) and it gets redrawn as a yellow, Simpsons-style cartoon: flat colors, thick black outlines, big round eyes, an outlined nose and mouth, and optional stubble. Choose a cartoon sky background or a cartoonized version of the original, and press and hold the picture to compare with the photo.
+- Runs entirely in the browser with no backend. MediaPipe's face landmarker finds the eyes, nose, mouth and brows, and its selfie multiclass segmenter separates hair, skin, clothes and background. The models (~20 MB) download once and are cached.
+- This is a stylized filter, not a generative AI redraw, so the result keeps your hair, clothes and face shape rather than inventing a new character.
+
 ## Hosting
 It's a single static `index.html`. Enable GitHub Pages under **Settings → Pages → Deploy from a branch → `main` / root**.
 Camera access needs HTTPS, which GitHub Pages provides.

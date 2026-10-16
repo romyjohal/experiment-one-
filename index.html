@@ -427,6 +427,7 @@
   <hr>
   <button data-act="tracker">Open Tracker Cam...</button>
   <button data-act="blink">Open Blink Counter...</button>
+  <button data-act="toon">Open Toon Booth...</button>
 </div>
 <div class="menu raised" id="menu-view">
   <button data-act="fullscreen">Full screen</button>
@@ -442,6 +443,7 @@
   <button data-act="snap">Save frame</button>
   <button data-act="tracker">Tracker Cam</button>
   <button data-act="blink">Blink Counter</button>
+  <button data-act="toon">Toon Booth</button>
   <hr>
   <button data-act="about">About...</button>
   <button data-act="stop">Shut Down...</button>
@@ -685,6 +687,7 @@
     'toggle-mirror': () => { mirrorChk.checked = !mirrorChk.checked; },
     tracker: () => { location.href = 'tracker.html'; },
     blink: () => { location.href = 'blink.html'; },
+    toon: () => { location.href = 'toon.html'; },
   };
 
   // ---------- UI wiring ----------
