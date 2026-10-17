@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#008080">
+<title>Brow Mapper 95</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath d=%27M2 6q6-5 12-1%27 fill=%27none%27 stroke=%27%23642%27 stroke-width=%272.2%27/%3E%3Cpath d=%27M2 11q6-5 12 0q-6 5-12 0z%27 fill=%27%23fff%27 stroke=%27%23000%27/%3E%3Ccircle cx=%278%27 cy=%2711%27 r=%271.8%27 fill=%27%23008%27/%3E%3Cpath d=%27M5 15V2M10 15L12 2%27 stroke=%27%23f0a%27 stroke-width=%27.8%27/%3E%3C/svg%3E">
+<style>
+  :root {
+    --desktop: #008080;
+    --face: #c0c0c0;
+    --light: #ffffff;
+    --mid: #dfdfdf;
+    --shadow: #808080;
+    --dark: #0a0a0a;
+    --title-a: #000080;
+    --title-b: #1084d0;
+    --text: #000000;
+    --font: "MS Sans Serif", "Microsoft Sans Serif", Tahoma, Geneva, Verdana, sans-serif;
+    --mono: "Lucida Console", "Courier New", Courier, ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: var(--desktop); color: var(--text);
+    font-family: var(--font); font-size: 13px;
+    -webkit-user-select: none; user-select: none;
+  }
+  body {
+    display: flex; flex-direction: column;
+    height: 100vh; height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+  .raised {
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .sunken {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow),
+                inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .desktop {
+    flex: 1; min-height: 0; padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    display: flex; flex-direction: column;
+  }
+  .window {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
+    padding: 3px; width: 100%; max-width: 760px; margin: 0 auto;
+  }
+  .titlebar {
+    display: flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 3px;
+    background: linear-gradient(90deg, var(--title-a), var(--title-b));
+    color: #fff; font-weight: bold;
+  }
+  .titlebar .t-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .titlebar a { color: #fff; font-weight: normal; font-size: 12px; }
+
+  .screen {
+    flex: 1; min-height: 0; margin: 4px 0;
+    padding: 2px; background: #000; position: relative;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  #view { max-width: 100%; max-height: 100%; display: block; touch-action: none; }
+  video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .splash {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 12px; padding: 16px;
+    color: #c0c0c0; font-family: var(--mono); text-align: center;
+  }
+  .splash.hidden { display: none; }
+
+  .controls { display: flex; flex-direction: column; gap: 6px; padding: 2px 1px 4px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .row .btn { flex: 1; }
+  .btn {
+    font: inherit; color: var(--text); border: 0; cursor: pointer;
+    min-height: 36px; padding: 4px 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light),
+                inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .btn:active {
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--dark),
+                inset -2px -2px var(--mid), inset 2px 2px var(--shadow);
+    padding: 5px 9px 3px 11px;
+  }
+  .btn.default { outline: 1px solid var(--dark); outline-offset: -1px; font-weight: bold; }
+  .btn:disabled { color: var(--shadow); text-shadow: 1px 1px var(--light); }
+  label.lbl { white-space: nowrap; min-width: 64px; }
+  .val { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; background: transparent;
+    flex: 1; height: 28px; margin: 0; min-width: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-moz-range-track { height: 4px; background: #000; box-shadow: 1px 1px var(--light), -1px -1px var(--shadow); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 24px; margin-top: -10px; border: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 14px; height: 24px; border: 0; border-radius: 0; background: var(--face);
+    box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light), inset -2px -2px var(--shadow), inset 2px 2px var(--mid);
+  }
+  .statusbar { display: flex; gap: 2px; font-size: 12px; }
+  .statusbar > div { padding: 3px 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .statusbar > div:first-child { flex: 1; }
+  .titlebar nav { display: flex; gap: 8px; }
+  .opts { display: flex; gap: 4px 12px; flex-wrap: wrap; }
+  .chk { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-height: 26px; }
+  .chk input {
+    -webkit-appearance: none; appearance: none; margin: 0; width: 15px; height: 15px; background: #fff; position: relative; flex: none;
+    box-shadow: inset -1px -1px var(--light), inset 1px 1px var(--shadow), inset -2px -2px var(--mid), inset 2px 2px var(--dark);
+  }
+  .chk input:checked::after {
+    content: ""; position: absolute; left: 4px; top: 2px; width: 4px; height: 7px;
+    border: solid #000; border-width: 0 2px 2px 0; transform: rotate(40deg);
+  }
+  .sw { display: inline-block; width: 14px; height: 3px; vertical-align: middle; }
+  table.meas { width: 100%; border-collapse: collapse; background: #fff; font-size: 12px; }
+  table.meas th, table.meas td { padding: 3px 5px; text-align: left; vertical-align: top; }
+  table.meas th { white-space: nowrap; }
+  table.meas th { font-weight: normal; background: var(--face); box-shadow: inset -1px -1px var(--dark), inset 1px 1px var(--light); }
+  table.meas td.ok { color: #006000; }
+  table.meas td.off { color: #a00000; }
+  table.meas td small { color: #555; display: block; }
+  table.meas td.flat { color: #555; }
+  .measwrap { overflow-x: auto; }
+</style>
+</head>
+<body>
+<div class="desktop">
+  <div class="window raised">
+    <div class="titlebar">
+      <span class="t-text">Brow Mapper 95</span>
+      <nav><a href="./">Desktop</a></nav>
+    </div>
+
+    <div class="screen sunken">
+      <canvas id="view" aria-label="Camera view with eyebrow mapping overlay"></canvas>
+      <video id="video" playsinline muted></video>
+      <div class="splash" id="splash">
+        <div style="color:#fff;font-size:16px">BROW MAPPER 95</div>
+        <div>Press <b>Start camera</b> and face the camera<br>straight on, with your brows uncovered.</div>
+        <div style="font-size:11px;color:#808080">Face tracking runs in your browser. Video never leaves your device.</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="row">
+        <button class="btn default" id="startBtn">Start camera</button>
+        <button class="btn" id="freezeBtn" disabled>Freeze</button>
+        <button class="btn" id="flipBtn" disabled>Flip</button>
+        <button class="btn" id="saveBtn" disabled>Save</button>
+      </div>
+      <div class="opts">
+        <label class="chk"><input type="checkbox" id="optLines" checked> <span class="sw" style="background:#ff2fa8"></span> Guide lines</label>
+        <label class="chk"><input type="checkbox" id="optIdeal" checked> <span class="sw" style="background:#ffe14d"></span> Ideal shape</label>
+        <label class="chk"><input type="checkbox" id="optBrow" checked> <span class="sw" style="background:#33e0ff"></span> Your brows</label>
+        <label class="chk"><input type="checkbox" id="optSym"> Symmetry</label>
+      </div>
+      <div class="measwrap sunken">
+        <table class="meas">
+          <thead><tr><th></th><th>Your left brow</th><th>Your right brow</th></tr></thead>
+          <tbody>
+            <tr><th>1 Start</th><td id="m-start-L">--</td><td id="m-start-R">--</td></tr>
+            <tr><th>2 Arch</th><td id="m-arch-L">--</td><td id="m-arch-R">--</td></tr>
+            <tr><th>3 Tail</th><td id="m-tail-L">--</td><td id="m-tail-R">--</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="statusbar">
+      <div class="sunken" id="status">Ready</div>
+      <div class="sunken" id="sym">--</div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  const MP_VER = '0.10.21';
+  const MP_URL = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MP_VER}`;
+  const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+  const IRIS_MM = 11.7;      // average adult iris diameter, used as an on-face ruler
+  const TOL_MM = 1;          // within this, a point counts as "on the guide"
+
+  // Per side of the face. 'R' is the person's right (MediaPipe's 33/133 eye), 'L' their left.
+  const SIDES = {
+    R: { upper: [70, 63, 105, 66, 107], lower: [46, 53, 52, 65, 55], outer: 33, inner: 133, ala: 129 },
+    L: { upper: [300, 293, 334, 296, 336], lower: [276, 283, 282, 295, 285], outer: 263, inner: 362, ala: 358 },
+  };
+  const IRISES = [[468, 469, 470, 471, 472], [473, 474, 475, 476, 477]];
+  const C = { lines: '#ff2fa8', ideal: '#ffe14d', brow: '#33e0ff', sym: 'rgba(255,255,255,.8)' };
+
+  const $ = id => document.getElementById(id);
+  const video = $('video'), view = $('view'), ctx = view.getContext('2d');
+  const startBtn = $('startBtn'), freezeBtn = $('freezeBtn'), flipBtn = $('flipBtn'), saveBtn = $('saveBtn');
+  const setStatus = t => { $('status').textContent = t; };
+
+  let landmarker = null, stream = null, facing = 'user', running = false, frozen = false, lastVideoTime = -1;
+  let smooth = null;                 // smoothed landmarks (screen px)
+  let meas = null, lastUi = 0;       // smoothed measurements (mm)
+
+  // ---------- vector helpers ----------
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
+  const mul = (a, k) => [a[0] * k, a[1] * k];
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
+  const len = a => Math.hypot(a[0], a[1]);
+  const norm = a => mul(a, 1 / (len(a) || 1));
+  const mid = (a, b) => mul(add(a, b), 0.5);
+  // x on the line through p and q at height y (face coordinates)
+  const lineX = (p, q, y) => Math.abs(q[1] - p[1]) < 1e-6 ? p[0] : p[0] + (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]);
+
+  // ---------- model & camera ----------
+  async function loadModel() {
+    if (landmarker) return;
+    setStatus('Loading face model (~4 MB)...');
+    const { FilesetResolver, FaceLandmarker } = await import(`${MP_URL}/vision_bundle.mjs`);
+    const fileset = await FilesetResolver.forVisionTasks(`${MP_URL}/wasm`);
+    const make = delegate => FaceLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: MODEL_URL, delegate }, runningMode: 'VIDEO', numFaces: 1,
+    });
+    try { landmarker = await make('GPU'); } catch (e) { landmarker = await make('CPU'); }
+  }
+
+  async function start() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setStatus('Camera not supported (needs HTTPS)'); return; }
+    stopStream();
+    startBtn.disabled = true;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: false, video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+    } catch (e) { setStatus('Camera blocked: ' + e.name); startBtn.disabled = false; return; }
+    video.srcObject = stream;
+    await video.play();
+    const s = stream.getVideoTracks()[0].getSettings();
+    if (s.facingMode) facing = s.facingMode;
+    view.width = video.videoWidth; view.height = video.videoHeight;
+    $('splash').classList.add('hidden');
+    try { await loadModel(); }
+    catch (e) { console.error(e); setStatus('Could not load face model - check your connection'); stopStream(); startBtn.disabled = false; return; }
+    startBtn.disabled = false;
+    startBtn.textContent = 'Stop';
+    [freezeBtn, flipBtn, saveBtn].forEach(b => b.disabled = false);
+    smooth = null; meas = null; frozen = false; freezeBtn.textContent = 'Freeze';
+    setStatus('Looking for your face...');
+    if (!running) { running = true; requestAnimationFrame(loop); }
+  }
+
+  function stopStream() {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+
+  function stop() {
+    running = false;
+    stopStream();
+    ctx.clearRect(0, 0, view.width, view.height);
+    $('splash').classList.remove('hidden');
+    startBtn.textContent = 'Start camera';
+    [freezeBtn, flipBtn, saveBtn].forEach(b => b.disabled = true);
+    setStatus('Ready');
+  }
+
+  const mirrored = () => facing === 'user';
+
+  // ---------- geometry ----------
+  // Face-aligned frame: x across the eyes, y up the face. Origin between the inner eye corners.
+  function faceFrame(P) {
+    const o = mid(P(133), P(362));
+    const xAxis = norm(sub(P(263), P(33)));
+    let yAxis = [xAxis[1], -xAxis[0]];
+    if (dot(yAxis, sub(P(10), P(152))) < 0) yAxis = mul(yAxis, -1);
+    return {
+      toF: p => { const d = sub(p, o); return [dot(d, xAxis), dot(d, yAxis)]; },
+      toS: f => add(o, add(mul(xAxis, f[0]), mul(yAxis, f[1]))),
+    };
+  }
+
+  function analyse(P) {
+    const F = faceFrame(P);
+    const irises = IRISES.map(ring => {
+      const c = P(ring[0]);
+      const r = ring.slice(1).reduce((s, i) => s + len(sub(P(i), c)), 0) / 4;
+      return { c, r };
+    });
+    const irisPx = irises[0].r + irises[1].r;            // two radii = one diameter
+    const mmPerPx = IRIS_MM / irisPx;
+    const eyeSpan = len(sub(P(263), P(33)));
+
+    const sides = {};
+    for (const [key, s] of Object.entries(SIDES)) {
+      const out = Math.sign(F.toF(P(s.outer))[0]) || 1;
+      // face coords with x pointing outward from the nose for this side
+      const f = p => { const q = F.toF(p); return [q[0] * out, q[1]]; };
+      const back = q => F.toS([q[0] * out, q[1]]);
+
+      const eyeC = mid(P(s.outer), P(s.inner));
+      const iris = irises.reduce((a, b) => len(sub(a.c, eyeC)) < len(sub(b.c, eyeC)) ? a : b);
+      const A = f(P(s.ala));
+      const ic = f(iris.c), irisOuter = [ic[0] + iris.r, ic[1]];
+      const corner = f(P(s.outer));
+      const U = s.upper.map(i => f(P(i))), L = s.lower.map(i => f(P(i)));
+
+      // the brow as it is
+      const inner = mid(U[4], L[4]), tail = mid(U[0], L[0]);
+      const archTop = U.reduce((a, b) => b[1] > a[1] ? b : a);
+      const thick = Math.max(len(sub(U[4], L[4])), eyeSpan * 0.04);
+
+      // deviations from the three guide lines, in px (outward positive)
+      const dStart = inner[0] - A[0];
+      const dArch = archTop[0] - lineX(A, irisOuter, archTop[1]);
+      // how much the peak stands above the brow's two ends; near zero means a flat brow with no real peak
+      const peak = archTop[1] - Math.max(U[0][1], U[4][1]);
+      const dTail = tail[0] - lineX(A, corner, tail[1]);
+
+      // ideal shape built on the guides, keeping the person's own arch height and thickness
+      const Sb = [A[0], inner[1] - thick / 2], St = [A[0], inner[1] + thick / 2];
+      const At = [lineX(A, irisOuter, archTop[1]), archTop[1]];
+      const Ab = [At[0] - thick * 0.15, archTop[1] - thick * 0.8];
+      const Ey = Sb[1] + thick * 0.35;
+      const E = [lineX(A, corner, Ey), Ey];
+      const top = Math.max(...U.map(p => p[1])) + eyeSpan * 0.18;
+
+      sides[key] = {
+        back, A, irisOuter, corner, U, L, inner, tail, archTop, top,
+        guides: [[A, [A[0], top]], [A, [lineX(A, irisOuter, top), top]], [A, [lineX(A, corner, top), top]]],
+        ideal: { Sb, St, At, Ab, E },
+        dev: { start: dStart * mmPerPx, arch: dArch * mmPerPx, tail: dTail * mmPerPx, archY: archTop[1] * mmPerPx, peak: peak * mmPerPx },
+      };
+    }
+    // how far the nose is off-centre: a rough "are you facing the camera" check
+    const yaw = F.toF(P(1))[0] / eyeSpan;
+    return { sides, yaw, F };
+  }
+
+  // ---------- drawing ----------
+  function drawOverlay(P, a) {
+    const W = view.width, lw = Math.max(2, W / 400);
+    ctx.lineCap = ctx.lineJoin = 'round';
+    ctx.shadowColor = 'rgba(0,0,0,.7)'; ctx.shadowBlur = lw * 1.5;
+    const poly = (pts, back, close) => {
+      ctx.beginPath();
+      pts.forEach((p, i) => { const s = back(p); i ? ctx.lineTo(s[0], s[1]) : ctx.moveTo(s[0], s[1]); });
+      if (close) ctx.closePath();
+    };
+
+    if ($('optSym').checked) {
+      // centre line and the lines joining the two brows' starts and arch peaks
+      const R = a.sides.R, L = a.sides.L;
+      ctx.strokeStyle = C.sym; ctx.lineWidth = lw * 0.6; ctx.setLineDash([lw * 3, lw * 3]);
+      const top = Math.max(R.top, L.top);
+      const c0 = a.F.toS([0, a.F.toF(P(1))[1]]), c1 = a.F.toS([0, top]);
+      ctx.beginPath(); ctx.moveTo(c0[0], c0[1]); ctx.lineTo(c1[0], c1[1]); ctx.stroke();
+      for (const k of ['inner', 'archTop']) {
+        const p = R.back(R[k]), q = L.back(L[k]);
+        const d = norm(sub(q, p)), e = mul(d, len(sub(q, p)) * 0.15);
+        ctx.beginPath(); ctx.moveTo(...sub(p, e)); ctx.lineTo(...add(q, e)); ctx.stroke();
+      }
+      ctx.setLineDash([]);
+    }
+
+    for (const s of Object.values(a.sides)) {
+      if ($('optLines').checked) {
+        ctx.strokeStyle = C.lines; ctx.lineWidth = lw * 0.8;
+        for (const [p, q] of s.guides) { poly([p, q], s.back); ctx.stroke(); }
+        ctx.fillStyle = C.lines;
+        for (const p of [s.A, s.irisOuter, s.corner]) {
+          const q = s.back(p); ctx.beginPath(); ctx.arc(q[0], q[1], lw * 1.3, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      if ($('optBrow').checked) {
+        ctx.strokeStyle = C.brow; ctx.lineWidth = lw;
+        poly([...s.U, ...s.L.slice().reverse()], s.back, true); ctx.stroke();
+      }
+      if ($('optIdeal').checked) {
+        const { Sb, St, At, Ab, E } = s.ideal, b = s.back;
+        const Q = (cp, p) => { const c = b(cp), q = b(p); ctx.quadraticCurveTo(c[0], c[1], q[0], q[1]); };
+        ctx.beginPath();
+        ctx.moveTo(...b(St));
+        Q([(St[0] + At[0]) / 2, At[1]], At);
+        Q([(At[0] + E[0]) / 2, (At[1] + E[1]) / 2 + (At[1] - E[1]) * 0.25], E);
+        Q([(Ab[0] + E[0]) / 2, (Ab[1] + E[1]) / 2], Ab);
+        Q([(Ab[0] + Sb[0]) / 2, Ab[1]], Sb);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255,225,77,.18)'; ctx.fill();
+        ctx.strokeStyle = C.ideal; ctx.lineWidth = lw * 0.9; ctx.setLineDash([lw * 2.5, lw * 2]); ctx.stroke(); ctx.setLineDash([]);
+        // numbered markers
+        const marks = [[mid(Sb, St), '1'], [At, '2'], [E, '3']];
+        const r = lw * 4.2;
+        ctx.font = `bold ${Math.round(r * 1.25)}px Tahoma, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (const [p, t] of marks) {
+          const q = b(p);
+          ctx.fillStyle = C.ideal; ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, Math.PI * 2); ctx.fill();
+          ctx.shadowBlur = 0; ctx.fillStyle = '#000'; ctx.fillText(t, q[0], q[1] + 1); ctx.shadowBlur = lw * 1.5;
+        }
+      }
+    }
+    ctx.shadowBlur = 0;
+  }
+
+  // ---------- measurements ----------
+  const ADVICE = {
+    start: d => d > TOL_MM ? 'starts late: fill in toward nose' : d < -TOL_MM ? 'starts early: past the guide' : 'on the guide',
+    arch:  d => d > TOL_MM ? 'peak too far out' : d < -TOL_MM ? 'peak too far in' : 'on the guide',
+    tail:  d => d < -TOL_MM ? 'short: extend the tail' : d > TOL_MM ? 'long: past the guide' : 'on the guide',
+  };
+
+  function updateMeasurements(a, now) {
+    const k = meas ? 0.15 : 1;
+    const next = meas || { R: {}, L: {} };
+    for (const side of ['R', 'L']) for (const [m, v] of Object.entries(a.sides[side].dev))
+      next[side][m] = next[side][m] === undefined ? v : next[side][m] + (v - next[side][m]) * k;
+    meas = next;
+    if (now - lastUi < 250) return;
+    lastUi = now;
+    for (const side of ['R', 'L']) for (const m of ['start', 'arch', 'tail']) {
+      const d = meas[side][m], td = $(`m-${m}-${side}`);
+      if (m === 'arch' && meas[side].peak < 1) {
+        td.className = 'flat';
+        td.innerHTML = `flat <small>no clear peak - guide 2 shows where to lift it</small>`;
+        continue;
+      }
+      td.className = Math.abs(d) <= TOL_MM ? 'ok' : 'off';
+      td.innerHTML = `${d > 0 ? '+' : ''}${d.toFixed(1)} mm <small>${ADVICE[m](d)}</small>`;
+    }
+    const dh = meas.L.archY - meas.R.archY;
+    $('sym').textContent = Math.abs(dh) < 0.5 ? 'Arches level' : `${dh > 0 ? 'Left' : 'Right'} arch ${Math.abs(dh).toFixed(1)} mm higher`;
+  }
+
+  // ---------- main loop ----------
+  const frame = document.createElement('canvas');   // last camera frame, so a frozen view can be redrawn
+
+  function render() {
+    ctx.drawImage(frame, 0, 0);
+    const P = i => smooth[i];
+    const a = analyse(P);
+    drawOverlay(P, a);
+    return a;
+  }
+
+  function loop() {
+    if (!running) return;
+    const now = performance.now();
+    if (!frozen && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
+      lastVideoTime = video.currentTime;
+      const W = view.width, H = view.height;
+      frame.width = W; frame.height = H;
+      const fx = frame.getContext('2d');
+      if (mirrored()) { fx.translate(W, 0); fx.scale(-1, 1); }
+      fx.drawImage(video, 0, 0, W, H);
+
+      const res = landmarker.detectForVideo(video, now);
+      const lm = res.faceLandmarks && res.faceLandmarks[0];
+      if (lm && lm.length >= 478) {
+        const raw = lm.map(p => [(mirrored() ? 1 - p.x : p.x) * W, p.y * H]);
+        if (!smooth) smooth = raw;
+        else smooth = smooth.map((p, i) => [p[0] + (raw[i][0] - p[0]) * 0.5, p[1] + (raw[i][1] - p[1]) * 0.5]);
+        const a = render();
+        updateMeasurements(a, now);
+        setStatus(Math.abs(a.yaw) > 0.07 ? 'Turn to face the camera straight on' : 'Mapping your brows');
+      } else {
+        smooth = null;
+        ctx.drawImage(frame, 0, 0);
+        setStatus('No face found - look at the camera');
+      }
+    }
+    requestAnimationFrame(loop);
+  }
+
+  // ---------- UI ----------
+  startBtn.onclick = () => (stream ? stop() : start());
+  freezeBtn.onclick = () => {
+    frozen = !frozen;
+    freezeBtn.textContent = frozen ? 'Live' : 'Freeze';
+    if (frozen) setStatus('Frozen - press Live to continue');
+  };
+  flipBtn.onclick = () => { facing = facing === 'user' ? 'environment' : 'user'; start(); };
+  ['optLines', 'optIdeal', 'optBrow', 'optSym'].forEach(id => $(id).addEventListener('change', () => { if (frozen && smooth) render(); }));
+  saveBtn.onclick = () => {
+    view.toBlob(async blob => {
+      const file = new File([blob], 'brow-map-' + Date.now() + '.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; }
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  };
+  document.addEventListener('visibilitychange', () => { if (document.hidden && stream) stop(); });
+</script>
+</body>
+</html>

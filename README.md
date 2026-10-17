@@ -32,6 +32,14 @@ Take a photo with the front camera (or upload one) and it gets redrawn as a yell
 - Runs entirely in the browser with no backend. MediaPipe's face landmarker finds the eyes, nose, mouth and brows, and its selfie multiclass segmenter separates hair, skin, clothes and background. The models (~20 MB) download once and are cached.
 - This is a stylized filter, not a generative AI redraw, so the result keeps your hair, clothes and face shape rather than inventing a new character.
 
+## Brow Mapper (`brows.html`)
+Live eyebrow mapping over your face, using the method brow artists use:
+1. **Start**: a line straight up from the outer edge of the nostril.
+2. **Arch**: a line from the nostril through the outer edge of the iris marks the peak.
+3. **Tail**: a line from the nostril through the outer corner of the eye marks where the brow should end.
+
+It also draws your current brow outline, an ideal shape built on the guides, and optional symmetry lines. A table shows how far each brow's start, arch and tail are from its guide, in millimetres. The scale comes from the iris, which is about 11.7 mm across on most adults, so treat the numbers as estimates and face the camera straight on. **Freeze** holds the frame, so you can toggle layers and **Save** the image. **Flip** switches to the rear camera, for mapping someone else's brows. It uses the same in-browser MediaPipe face landmarker as Blink Counter.
+
 ## Hosting
 It's all static HTML files with no build step. Enable GitHub Pages under **Settings → Pages → Deploy from a branch → `main` / root**.
 Camera access needs HTTPS, which GitHub Pages provides.
